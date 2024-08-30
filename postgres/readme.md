@@ -1,6 +1,6 @@
 # Postgres SQL
 
-- For our cloud native learnings, we will do stuff on PostgresSQL
+For our cloud native learnings, we will do stuff on PostgresSQL
 
 ## Todo
 
@@ -11,5 +11,6 @@
 5. Triggers
 6. Procedures
 7. Partitions
+8. Sharding
 
 ---

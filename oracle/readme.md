@@ -9,5 +9,6 @@ We are fairly familiar with Oracle SQL so we will directly skip to more complex 
 3. Triggers
 4. Procedures
 5. Partitions
+6. Sharding
 
 ---
