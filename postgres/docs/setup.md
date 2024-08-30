@@ -66,6 +66,11 @@ docker run -d \
   - `grant all privileges on all tables in schema {schemaName} to {username}`
 - After this, you have to create a new connection for the new user to new database
   - Now you are ready to use that schema in the database
+- If we want to delete a database
+  - we can do `drop database {db}`
+  - only owner of db can delete a db
+  - a db can only be deleted if there are no open connections to thsi db including current connection
+  - this will delete all objects inside the db
 - Additionally, if we want to delete users
   - we cannot directly delete/drop them
   - we first need to revoke all its grants
@@ -86,5 +91,9 @@ docker run -d \
   - this wil generally create the table in `public` schema
   - to create in a specific schema, we use `CREATE TABLE <schemaName>.<tableName>`
   - user must have access to this schema to do this
+- To delete a schema
+  - do a `drop schema {schemaName}`
+  - this can only delete an empty schema
+  - to delete everything inside a schema as well, we do `drop schema <schemaName> cascade`
 
 ---
