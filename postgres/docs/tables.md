@@ -6,6 +6,10 @@
 - we can set the type to `serial` to auto-generate ids
 - we can delete tables using `drop table {tableName}`
 
+## Alter
+
+- you can alter a variety of things as show in the corresponding sql file
+
 ## Insert
 
 - use `INSERT INTO` command to do this
@@ -31,5 +35,12 @@
 
 - Allows insert, update and delete all in one query
 - Insert new records and update/delete existing record based on some condition
+
+---
+
+## Utility tables
+
+- Utility tables store system information like what type of columns, what tables, what database objects etc
+- Few of them are covered in the corresponding sql files
 
 ---

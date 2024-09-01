@@ -13,9 +13,7 @@ alter table myschema.tasks add column task_desc varchar(20) not null;
 alter table myschema.tasks add column task_type varchar(10) default null;
 alter table myschema.tasks add column parent int default null;
 alter table myschema.tasks rename column name to task_name;
-
--- describe table columns
-select* from information_schema.columns where table_name = 'tasks';
+alter table myschema.tasks drop constraint tasks_pkey;
 
 -- delete table
 drop table myschema.tasks;
@@ -131,3 +129,8 @@ values (src.id, src.name, src.desc, src.type, src.parent);
 -- simple select
 select* from myschema.tasks;
 select* from myschema.tasks_archive;
+
+-- utility tables
+select* from information_schema.columns where table_name = 'tasks';
+select* from pg_catalog.pg_constraint where conname like 'tasks%';
+select* from pg_catalog.pg_database;
