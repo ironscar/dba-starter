@@ -20,8 +20,16 @@
 
 - use `DELETE FROM` commmand to do this
 
+## Select 
+
+- Regular SQL queries work with the usual syntax except for the non-existence of `dual`
+  - in this case we just skip the `from dual` part and it works as expected
+- `WITH RECURSIVE` is a new thing which allows recursive queries like finding hierarchies
+- `WITH` can also be used with `RETURNING` to move deleted rows of one table to another table
+
 ## Merge into
 
-## Select 
+- Allows insert, update and delete all in one query
+- Insert new records and update/delete existing record based on some condition
 
 ---
