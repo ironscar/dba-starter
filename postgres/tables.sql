@@ -51,6 +51,9 @@ delete from myschema.tasks
 where task_id = 2
 ;
 
+-- truncate table
+truncate table myschema.tasks;
+
 -- select with
 with myta1 as (
 	select* from myschema.tasks
@@ -132,5 +135,7 @@ select* from myschema.tasks_archive;
 
 -- utility tables
 select* from information_schema.columns where table_name = 'tasks';
+select* from information_Schema.routines where routine_schema = 'myschema';
 select* from pg_catalog.pg_constraint where conname like 'tasks%';
 select* from pg_catalog.pg_database;
+select* from pg_catalog.pg_trigger;

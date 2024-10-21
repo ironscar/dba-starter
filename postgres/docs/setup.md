@@ -69,7 +69,7 @@ docker run -d \
 - If we want to delete a database
   - we can do `drop database {db}`
   - only owner of db can delete a db
-  - a db can only be deleted if there are no open connections to thsi db including current connection
+  - a db can only be deleted if there are no open connections to this db including current connection
   - this will delete all objects inside the db
 - Additionally, if we want to delete users
   - we cannot directly delete/drop them
