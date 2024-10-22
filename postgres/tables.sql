@@ -137,5 +137,7 @@ select* from myschema.tasks_archive;
 select* from information_schema.columns where table_name = 'tasks';
 select* from information_Schema.routines where routine_schema = 'myschema';
 select* from pg_catalog.pg_constraint where conname like 'tasks%';
+select* from pg_catalog.pg_tables;
 select* from pg_catalog.pg_database;
 select* from pg_catalog.pg_trigger;
+select* from pg_catalog.pg_indexes;

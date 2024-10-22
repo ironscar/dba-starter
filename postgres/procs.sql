@@ -30,6 +30,4 @@ select t.id, t.name, t.desc, t.type, t.parent from (
 ) t;
 
 -- simple select
-select* from myschema.tasks;
-select* from myschema.tasks_archive;
 select* from myschema.task_audit;

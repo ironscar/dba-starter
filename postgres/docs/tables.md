@@ -59,5 +59,6 @@
 - Few of them are covered in the corresponding sql files
 - The ones in `information_schema` require the schema to be specified while querying
 - The ones in `pg_catalog` are directly accessible and don't require the schema to be specified while querying
+- You can see all these utility tables by `select* from pg_tables;`
 
 ---
