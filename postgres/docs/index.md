@@ -47,6 +47,8 @@
   - check cost of query (use `Explain Analyze` for selects and just `Explain` for others)
   - add index, explain plans and compare them for improvements if any
   - if no improvements, no the time to add indexes yet
+
 - Check when to know indexes need to be rebuilt [TODO]
+  - Look at reindex, reindex concurrent, autovacuum
 
 ---

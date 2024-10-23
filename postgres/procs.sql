@@ -31,3 +31,39 @@ select t.id, t.name, t.desc, t.type, t.parent from (
 
 -- simple select
 select* from myschema.task_audit;
+
+-- table for indexes
+create table myschema.index_trial_tasks (
+	task_id int not null,
+	task_title varchar(20),
+	user_id int
+);
+
+-- insert by procedure
+create or replace procedure myschema.inserter() 
+as $$
+begin
+	truncate table myschema.index_trial_tasks;
+	for i in 1..1000 loop
+		insert into myschema.index_trial_tasks values (
+			i, 'tt' || i, 100 + i
+		);
+	end loop;
+	commit;
+end
+$$ language plpgsql;
+call myschema.inserter();
+
+-- insert by function
+create or replace function myschema.inserter2() 
+returns void as $$
+begin
+	truncate table myschema.index_trial_tasks;
+	for i in 1..1000 loop
+		insert into myschema.index_trial_tasks values (
+			i, 'tt' || i, 100 + i
+		);
+	end loop;
+end
+$$ language plpgsql;
+select myschema.inserter2();

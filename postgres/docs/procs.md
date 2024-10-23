@@ -26,3 +26,12 @@
 - There is also something called `CONSTRAINT TRIGGERS` [CHECK-THEM-LATER]
 
 ---
+
+## Functions vs Procedures
+
+- Procedures do not return function value so don't need a `RETURNING` clause, which functions need
+- Procedures are executed using `CALL` whereas functions are executed using `EXECUTE`
+- Procedures can commit and rollback transactions whereas functions cannot
+- Procedures & functions can be dropped and altered with the `ALTER ROUTINE` & `DROP ROUTINE` commands
+
+---

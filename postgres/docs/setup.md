@@ -33,7 +33,7 @@ docker run -d \
 
 ---
 
-### Login
+## Login
 
 - On pgAdmin, we need to add a new server
   - Name: `{user}@{db}` (is the standard I have been using for now)
@@ -50,7 +50,7 @@ docker run -d \
 
 ---
 
-### Create databases & users
+## Create databases & users
 
 - By default, you want to login with `postgres@postgres`
 - To create a new database, we can use `create database {db}`
@@ -80,7 +80,7 @@ docker run -d \
 
 ---
 
-### Create schemas
+## Create schemas
 
 - We can create a new schema by `create schema {schemaname}`
   - be sure to be logged in with the correct user on the correct database
@@ -95,5 +95,34 @@ docker run -d \
   - do a `drop schema {schemaName}`
   - this can only delete an empty schema
   - to delete everything inside a schema as well, we do `drop schema <schemaName> cascade`
+
+---
+
+## Transactions
+
+- Transactions are a body of work that should either be done entirely or not at all
+- Starts with `BEGIN` or `BEGIN TRANSACTION` or `BEGIN TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+- Ends with `COMMIT` or `END TRANSACTION`
+- Undo changes via `ROLLBACK` in case of errors
+- There are specific issues that can happen at different isolation levels
+  - `dirty reads` where other non-committed transaction updates can affect current transaction
+  - `non-repeatable reads` where update operations from other committed transactions can affect current transaction
+  - `phantom reads` where insert/delete operations from other committed transactions can affect current transaction
+  - `serialization anomalies` where execution order of concurrent transactions can affect the final result of all transactions
+- There are different isolation levels for transactions
+  - `Read-uncommitted` allows `dirty reads`, `non-repeatable reads`, `phantom reads` and `serialization anomalies`
+  - `Read-commmitted` allows `non-repeatable reads`, `phantom reads` and `serialization anomalies`
+  - `Read-repeatable` allows `phantom reads` and `serialization anomalies`
+  - `Serializable` allows `serialization anomalies`
+- In Postgres
+  - `read-uncommitted` works similar to `read-committed` and doesn't allow `dirty reads`
+  - `read-repeatable` works similar to `serializable` and doesn't allow `phantom reads`
+- `Read-repeatable` and `Serializable` can have high degree of serialization error and rollbacks in high concurrency
+  - this can have performance implications and code complexity
+- `Read-committed` is the default isolation level of transactions in Postgres
+
+---
+
+## Locks [TODO]
 
 ---
