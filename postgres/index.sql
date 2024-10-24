@@ -38,3 +38,9 @@ where task_id = 125;
 -- functional index on task_title (cost = 10.59)
 select* from myschema.index_trial_tasks
 where lower(task_title) = 'tt100';
+
+-- reindex
+reindex (verbose,concurrently) index myschema.myschema_index3;
+reindex table myschema.index_trial_tasks;
+reindex schema myschema;
+reindex database student_tracker;

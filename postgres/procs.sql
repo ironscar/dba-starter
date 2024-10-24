@@ -67,3 +67,63 @@ begin
 end
 $$ language plpgsql;
 select myschema.inserter2();
+
+-- direct execution of anonymous block
+do $$
+declare
+   counter    integer = 1;
+   first_name varchar(50) = 'John';
+   last_name  varchar(50) = 'Doe';
+   payment    numeric(11,2) = 20.5;
+begin
+	-- get counter value
+    select count(task_id) into counter from myschema.index_trial_tasks;
+
+	-- ifelseif conditions
+	if counter < 500 then
+	    raise notice '% % % has been paid % USD',
+	    	counter,
+		   	first_name,
+		   	last_name,
+		   	payment;
+	elsif counter < 1000 then
+		raise notice '% % % has been paid % INR',
+	    	counter,
+		   	first_name,
+		   	last_name,
+		   	payment;
+	else 
+		raise notice '% % % has been paid % JPY',
+	    	counter,
+		   	first_name,
+		   	last_name,
+		   	payment;
+	end if;
+
+	-- case conditions
+	case
+		when counter < 500 then 
+			raise notice '% % % has been paid % USD',
+		    	counter,
+			   	first_name,
+			   	last_name,
+			   	payment;
+		when counter < 1000 then
+			raise notice '% % % has been paid % INR',
+		    	counter,
+			   	first_name,
+			   	last_name,
+			   	payment;
+		else
+			raise notice '% % % has been paid % JPY',
+		    	counter,
+			   	first_name,
+			   	last_name,
+			   	payment;
+	end case;
+		   
+	raise 'This is an error of code %', counter using hint = 'counter % is beyond limit';
+end $$;
+
+
+

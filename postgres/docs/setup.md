@@ -123,6 +123,10 @@ docker run -d \
 
 ---
 
-## Locks [TODO]
+## Locks
+
+- Locks are made on table when there are insert/update/delete commands being executed
+- Rows being inserted/updated/deleted are locked from other transactions editing them
+- Selects queries are never blocked
 
 ---

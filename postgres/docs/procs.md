@@ -27,6 +27,31 @@
 
 ---
 
+## PLSQL
+
+- All PL/SQL stuff is enclosed within dollar-quotes like `$$` or `$<tag>$`
+- We can declare variables in the declare section as `variable type = value` or `variable type := value`
+  - we can also use the type of a specific column as `var1 table.column%type` or `var1 var2%type`
+  - we can use `select <column> into <variable> from <table>...` to assign values to variables in body section
+  - we can define type by rows like `variable table%rowtype` or `variable view%rowtype` and access fields as `variable.field`
+  - we can use `record` type which can change type when reassigned values, so they be assigned any value whatsoever
+  - we can create constants as `variable constant type := value`
+- We can use the `raise` command to issue a message in the following levels
+  - `debug`, `log`, `notice`, `info`, `warning`, `exception`
+  - it is specified as `raise level format,value1,value2,...`
+  - `%` placeholders are placed in format to be replaced by the values in order (number of placeholders = number of values, else error)
+  - if level unspecified, it uses `exception` by default and stops the execution there
+  - Postgres only allows `info`, `warning`, `exception` and `notice` messages to be sent to client
+  - You can add hints to errors as `raise format,value using hint = '<hint>'`
+- We can have conditions based on `if.. elsif... else` or `case..when...then...else`
+  - they end with `end if` and `end case` respectively
+- We can do various kinds of iterations in PL/SQL [CONTINUE-HERE]
+
+
+- Try the bulk archiving setup in POSTGRES [CHECK]
+
+---
+
 ## Functions vs Procedures
 
 - Procedures do not return function value so don't need a `RETURNING` clause, which functions need

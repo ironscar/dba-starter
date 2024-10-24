@@ -19,16 +19,24 @@
 
 ---
 
-
 ## Indexes
 
 - Indexes can be created to make select queries faster but slow down updates and inserts
 - Indexes use different algorithms based on the type of index created:
-  - B-tree (default)
-  - Hash
-  - GiST
-  - SP-GiST
-  - GIN
+  - `BTREE` (default)
+    - Creates a balanced tree and stores in sorted order, good for exact match & ranged queries
+  - `HASH`
+    - Maintains 32 bit hashes for the values and can only handle simple equality queries
+  - `GIST`
+    - Allows nearest neighbour and partial match search strategies
+  - `SPGIST`
+    - Useful for hierarchical data and complex structures
+  - `GIN`
+    - Inverted indexes that are suitable for composite data like arrays or full-text search
+    - it stores each component of the composite value separately
+  - `BRIN`
+    - good for large table range queries
+  - we can specify this as `CREATE INDEX <index_name> ON TABLE USING <algorithm> (<columns>)`
 - Indexes should be avoided when
   - tables are too small
   - tables have frequent write operations
@@ -47,8 +55,19 @@
   - check cost of query (use `Explain Analyze` for selects and just `Explain` for others)
   - add index, explain plans and compare them for improvements if any
   - if no improvements, no the time to add indexes yet
-
-- Check when to know indexes need to be rebuilt [TODO]
-  - Look at reindex, reindex concurrent, autovacuum
+- Reindexing indexes are required if indexes get currupted
+  - requires the schema prefix when using `REINDEX INDEX`
+  - we can use `REINDEX CONCURRENTLY` option to not block reads during creation of index
+  - we can use `REINDEX INDEX` to rebuild a single index
+  - we can use `REINDEX TABLE` to rebuild all indexes of a table
+  - we can use `REINDEX SCHEMA` to rebuild all indexes of a schema (must be run by owner of schema)
+  - we can use `REINDEX DATABASE` to rebuild all indexes of a database (must be run by owner of schema)
+  - reindexing can take a few options:
+    - verbose gives more output about what indexes were reindexed etc
+    - concurrent doesn't block reads but does block writes on the table
+- Indexes are generally updated during insert/delete/update statements which can have performance implications
+  - these are unlikely to cause the index to corrupt unless the updates are faster than autovacuum
+  - autovacuum cleans up dead rows etc to free up data for the database
+  - in that case, we can either batch the updates, speed up autovacuum or rebuild the index ever so often
 
 ---
