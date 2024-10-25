@@ -6,6 +6,11 @@ A learning project for data engineering and administration of various types of S
 
 - Oracle [PROGRESS]
 - Postgres [PROGRESS]
+  - Partitions and swaps
+  - Sharding
+  - Space management
+  - Optimization configurations
+  - Backup/Restore
 - Redis
 - ScyllaDB
 - MongoDB
