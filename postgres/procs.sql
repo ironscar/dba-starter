@@ -120,39 +120,42 @@ end $$;
 
 -------------------------------------------------------------------------------
 
--- create audit table
-create table myschema.task_audit (
-	log_id serial primary key,
-	task_id int not null,
-	entry_date date,
-	operation varchar(10)
-);
-
--- trigger creation with implementation as function
-create or replace function myschema.audit_log()
-returns trigger as $$
+-- optionally parametrized, non-void-return functions
+create or replace function myschema.custom_subtract(
+	a int default 1, 
+	b int default 1
+)
+returns int as $$
 begin
-	insert into myschema.task_audit (task_id, entry_date, operation)
-	values (new.task_id, current_date, 'INSERT');
-	return new;
-end; 
+	return a - b;
+end;
 $$ language plpgsql;
+select myschema.custom_subtract(b => 3);
+drop routine myschema.custom_subtract(a int, b int);
 
-create or replace trigger task_audit_insert_trigger 
-after insert on myschema.tasks
-for each row 
-execute function myschema.audit_log();
+-- return table in function
+create or replace function myschema.table_fn()
+returns table (id int, name varchar)
+as $$
+begin
+	return query 
+	select task_id, task_name from myschema.tasks where task_id <= 5;
+end;
+$$ language plpgsql;
+select (myschema.table_fn()).name;
+drop function myschema.table_fn;
 
--- trial insert into tasks
-insert into myschema.tasks (task_id, task_name, task_desc, task_type, parent)
-select t.id, t.name, t.desc, t.type, t.parent from (
-	select 9 id, 'Task9' name, 'The ninth task' desc, 'T9' type, 8 parent
-	union
-	select 10 id, 'Task10' name, 'The tenth task' desc, 'T10' type, 8 parent
-) t;
+-- return setof
+create or replace function myschema.task_set()
+returns setof myschema.tasks as $$
+begin
+	return query select* from myschema.tasks where task_id <= 5;
+end;
+$$ language plpgsql;
+select (myschema.task_set()).*;
+drop function myschema.task_set;
 
--- simple select
-select* from myschema.task_audit;
+-------------------------------------------------------------------------------
 
 -- table for indexes
 create table myschema.index_trial_tasks (
@@ -190,15 +193,71 @@ end
 $$ language plpgsql;
 select myschema.inserter2();
 
--- optionally parametrized, non-void-return functions
-create or replace function myschema.custom_subtract(
-	a int default 1, 
-	b int default 1
-)
-returns int as $$
+-------------------------------------------------------------------------------
+
+-- cursors
+create or replace function myschema.cursor_trial()
+returns table(p_id int, p_name varchar)
+as $$
+declare
+	task_cursor cursor for
+		select task_id, task_name from myschema.tasks where task_id <= 5;
+	task_rec record;
 begin
-	return a - b;
+	open task_cursor;
+
+	loop
+		fetch next from task_cursor into task_rec;
+		exit when not found;
+		p_id = task_rec.task_id;
+		p_name = task_rec.task_name;
+		return next;
+	end loop;
+
+	close task_cursor;
 end;
 $$ language plpgsql;
-select myschema.custom_subtract(b => 3);
-drop routine myschema.custom_subtract(a int, b int);
+select (myschema.cursor_trial()).*;
+drop function myschema.cursor_trial;
+
+-------------------------------------------------------------------------------
+
+-- create audit table
+create table myschema.task_audit (
+	log_id serial primary key,
+	task_id int not null,
+	entry_date date,
+	operation varchar(10)
+);
+
+-- trigger creation with implementation as function
+create or replace function myschema.audit_log()
+returns trigger as $$
+begin
+	insert into myschema.task_audit (task_id, entry_date, operation)
+	values (new.task_id, current_date, 'INSERT');
+	return new;
+end; 
+$$ language plpgsql;
+
+create or replace trigger task_audit_insert_trigger 
+after insert on myschema.tasks
+for each row 
+execute function myschema.audit_log();
+
+-- trial insert into tasks
+insert into myschema.tasks (task_id, task_name, task_desc, task_type, parent)
+select t.id, t.name, t.desc, t.type, t.parent from (
+	select 9 id, 'Task9' name, 'The ninth task' desc, 'T9' type, 8 parent
+	union
+	select 10 id, 'Task10' name, 'The tenth task' desc, 'T10' type, 8 parent
+) t;
+
+-- simple select
+select* from myschema.task_audit;
+
+-- delete trigger
+drop trigger task_audit_insert_trigger on myschema.tasks;
+drop function myschema.audit_log;
+
+-------------------------------------------------------------------------------

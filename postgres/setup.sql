@@ -18,4 +18,7 @@ grant all on schema myschema to springstudent;
 -- delete schema
 drop schema myschema cascade;
 
+-- check current user
+select session_user, current_user;
+
 --------------------------------------------------------------------------
