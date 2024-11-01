@@ -6,11 +6,17 @@ A learning project for data engineering and administration of various types of S
 
 - Oracle [PROGRESS]
 - Postgres [PROGRESS]
-  - Partitions and swaps
-  - Sharding
-  - Space management
-  - Optimization configurations
-  - Backup/Restore
+  - Current
+    - Trigger
+      - How to set pg_trigger_depth
+    - Session variables
+    - Try bulk archiving
+  - Next
+    - Partitions and swaps
+    - Sharding
+    - Space management
+    - Optimization configurations
+    - Backup/Restore
 - Redis
 - ScyllaDB
 - MongoDB

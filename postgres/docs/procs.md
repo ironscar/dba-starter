@@ -142,14 +142,14 @@
   - Trigger functions cannot take parameters like regular functions
   - For functions, we have to enclose the main body within `$$` and `$$ language plpgsql`
 - To delete a trigger, use `drop trigger <trigger_name> on <table>;`
-
+- Triggers can trigger themselves if they update the same table they are set on causing infinite recursion
+  - This is called `CASCADING TRIGGERS` and the developer must attempt to avoid it
+  - We can use `pg_trigger_depth()` to control if a trigger can trigger itself or other triggers
+    - when we want other triggers to react to a trigger event as well, we can use this
+    - if depth = 0 => no other triggers fired, else they are fired
+  - We can also use session variables:
+    - we can set it like `PERFORM set_config('session.session_var', <val>, false)`
+    - we can read it like `if current_setting('session.session_var', TRUE) = <val>`
 - There is also something called `CONSTRAINT TRIGGERS` [CHECK-THEM-LATER]
-
----
-
-## TODOs
-
-- Triggers
-- Try the bulk archiving setup in POSTGRES [CHECK]
 
 ---
