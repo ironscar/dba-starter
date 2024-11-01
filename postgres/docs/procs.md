@@ -149,6 +149,7 @@
     - if depth = 0 => no other triggers fired, else they are fired
   - We can also use session variables:
     - we can set it like `PERFORM set_config('session.session_var', <val>, false)`
+      - the last parameter is if its local or not, implying if its set only for the current transaction
     - we can read it like `if current_setting('session.session_var', TRUE) = <val>`
 - There is also something called `CONSTRAINT TRIGGERS` [CHECK-THEM-LATER]
 
