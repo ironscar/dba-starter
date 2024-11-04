@@ -243,6 +243,7 @@ $$ language plpgsql;
 create or replace trigger task_audit_insert_trigger 
 after insert on myschema.tasks
 for each row 
+when (pg_trigger_depth() < 1)
 execute function myschema.audit_log();
 
 -- trial insert into tasks
@@ -256,8 +257,58 @@ select t.id, t.name, t.desc, t.type, t.parent from (
 -- simple select
 select* from myschema.task_audit;
 
+-- rename trigger
+alter trigger task_audit_trigger on myschema.tasks rename to task_audit_insert_trigger;
+
+-- enable/disable triggers
+alter table myschema.tasks disable trigger all;
+alter table myschema.tasks disable trigger task_audit_insert_trigger;
+alter table myschema.tasks enable trigger all;
+alter table myschema.tasks enable trigger task_audit_insert_trigger;
+
 -- delete trigger
 drop trigger task_audit_insert_trigger on myschema.tasks;
 drop function myschema.audit_log;
 
 -------------------------------------------------------------------------------
+
+-- 0 implies its not inside a trigger
+-- 1 implies its in a trigger triggered by user action
+-- 2 implies its in a trigger triggered by another trigger whose depth was 1
+select pg_trigger_depth();
+
+-- session variables
+do $$
+declare
+	counter int = 1;
+begin
+	perform set_config('session.add_count', '2', true);
+	select* into counter from myschema.tasks where task_id > 8;
+	raise info 'add_Count = %', current_setting('session.add_count', true);
+	raise info 'counter = %', counter;
+end $$;
+
+-------------------------------------------------------------------------------
+
+-- event triggers
+create or replace function myschema.event_trigger_function()
+returns event_trigger
+as $$
+begin
+	raise info 'Event = %, Tag = %', tg_event, tg_tag;
+end $$ language plpgsql;
+
+create event trigger audit_event_trigger
+on sql_drop
+execute function myschema.event_trigger_function();
+
+drop event trigger audit_event_trigger;
+
+-------------------------------------------------------------------------------
+
+-- constraint triggers
+
+
+
+
+

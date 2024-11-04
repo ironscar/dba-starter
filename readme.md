@@ -7,9 +7,8 @@ A learning project for data engineering and administration of various types of S
 - Oracle [PROGRESS]
 - Postgres [PROGRESS]
   - Current
-    - Trigger
-      - How to set pg_trigger_depth
-    - Session variables
+    - Constraint triggers & deferrable [NOW]
+    - For key share
     - Try bulk archiving
   - Next
     - Partitions and swaps
