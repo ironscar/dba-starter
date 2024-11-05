@@ -188,10 +188,27 @@
 ### Constraint triggers
 
 - These are used to enforce conditions on a table that cannot be done by regular constraints
-- Refer to https://www.cybertec-postgresql.com/en/triggers-to-enforce-constraints/ for an example
 - Triggers can be subject to race conditions in `read committed` isolation for transactions happening concurrently
   - normal constraints are not subject to this as they look at all rows regardless of isolation level
   - we can raise the isolation level to `serializable` where transactions will happen without race conditions but some will fail due to concurrent transactions
-- Constraint triggers are still liable to race conditons in `read committed` isolation but can be deferred till after transaction ends
+
+```
+CREATE CONSTRAINT TRIGGER constraint_name
+AFTER INSERT OR UPDATE OR DELETE
+ON table
+[REFERENCES reference_table]
+[NOT DEFERRABLE | DEFERRABLE] [INITIALLY IMMEDIATE | INITIALLY DEFERRED]
+[REFERENCING OLD TABLE AS old_table, NEW TABLE AS new_table]
+FOR EACH [ROW | STATEMENT]
+[WHEN (condition)]
+EXECUTE FUNCTION myfunction();
+```
+
+- These must always be `AFTER ROW` constraints
+- These don't support `CREATE OR REPLACE`
+- The deferrable modes can only be specified for constraint triggers
+- Current example not working [CHECK]
+  - normal trigger does it at end of row but deferred trigger is correctly happening at end
+  - probably because once it does all the inserts, it still inserts into audit row by row without checking what exists in table
 
 ---

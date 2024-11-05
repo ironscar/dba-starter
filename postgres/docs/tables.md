@@ -53,6 +53,24 @@
 
 ---
 
+## Deferring
+
+- Modes for deferring
+  - `NOT DEFERRABLE INITIALLY IMMEDIATE`: meaning they are applied for each row as and when that row is updated even during bulk ops
+  - `DEFERRABLE INITIALLY IMMEDIATE`: meaning they are immediate by default but we can change it per transaction
+  - `DEFERRABLE INITIALLY DEFERRED`: meaning they are deferred by default and rows are checked when transaction is committed
+- normal constraints are also `NOT DEFERRABLE INITIALLY IMMEDIATE` by default
+- Except `NOT NULL` and `CHECK`, all other inbuilt constraints can be deferred as below:
+  - `SET CONSTRAINTS key_name DEFERRED;` or `ALTER TABLE table_name ALTER CONSTRAINT constraint_name DEFERRABLE;`
+  - the former only works in transactions as it uses `SET`, the latter only works for foreign key constraints currently
+  - so we can essentially drop the constrainnt and add it as deferrable for others
+- We can see the `condeferrable` and `condeferred` columns in `pg_constraint` table to see what type of deferring it is
+- It can be useful for cases like `https://emmer.dev/blog/deferrable-constraints-in-postgresql/#use-cases`
+- Deferred constraints temporarily allow duplicate values and hence are less performant than default constraints which optimize on never allowing duplicate values at any point of time
+- Check `procs.sql`
+
+---
+
 ## Utility tables
 
 - Utility tables store system information like what type of columns, what tables, what database objects etc

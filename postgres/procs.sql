@@ -306,7 +306,93 @@ drop event trigger audit_event_trigger;
 
 -------------------------------------------------------------------------------
 
--- constraint triggers
+/* Deferred constraints */
+
+-- create deferred unique key
+alter table myschema.tasks 
+	drop constraint tasks_pkey, 
+	add constraint tasks_sort_key unique (task_id) deferrable initially deferred;
+
+-- undo deferred primary key
+alter table myschema.tasks
+	drop constraint tasks_sort_key,
+	add constraint tasks_pkey primary key (task_id);
+
+-- check if deferred
+select conname, condeferrable, condeferred from pg_catalog.pg_constraint where conname like 'tasks%';
+
+-- do updates which are row-wise restricted but allowed if deferred
+do $$
+begin
+	update myschema.tasks set task_id = 3 where task_name = 'Task1';
+	update myschema.tasks set task_id = 1 where task_name = 'Task3';
+end $$;
+
+-- check results
+select* from myschema.tasks;
+
+-------------------------------------------------------------------------------
+
+/* Deferred triggers */
+
+-- deferred trigger function (only do those insert logs that remain after commit)
+create or replace function myschema.deferrable_func()
+returns trigger as $$
+declare
+	counter int = 0;
+begin
+	select count(task_id) into counter from myschema.task_audit where entry_date = current_date;
+	if counter >= 2 then
+		raise 'more than 2 inserts, counter = %', counter;
+	else
+		raise info 'current count = %', counter;
+	end if;
+	insert into myschema.task_audit (task_id, entry_date, operation)
+		values (new.task_id, current_date, 'INSERT');
+	return new;
+end $$ language plpgsql;
+
+-- normal trigger (inserts 3 logs including the deleted one)
+create trigger undeferred_trigger
+after insert on  myschema.tasks
+for each row execute function myschema.deferrable_func();
+
+-- drop normal trigger
+drop trigger undeferred_trigger on myschema.tasks;
+
+-- deferred constraint trigger (should insert 2 logs only)
+create constraint trigger deferred_trigger
+after insert on  myschema.tasks
+deferrable initially deferred
+for each row execute function myschema.deferrable_func();
+
+-- drop deferred trigger
+drop trigger deferred_trigger on myschema.tasks;
+
+-- test case (insert 3 records and delete 2 records)
+do $$
+begin
+	insert into myschema.tasks (task_id, task_name, task_desc)
+		values (13, 'Task13', 'The thirteenth task');
+	insert into myschema.tasks (task_id, task_name, task_desc)
+		values (14, 'Task14', 'The fourteenth task');
+	delete from myschema.tasks where task_id = 14;
+	insert into myschema.tasks (task_id, task_name, task_desc)
+		values (15, 'Task15', 'The fifteenth task');
+end $$;
+
+-- reset test case
+delete from myschema.tasks where task_id in (13,14,15);
+delete from myschema.task_audit where task_id in (13,14,15);
+
+-- check results
+select* from myschema.tasks;
+select* from myschema.task_audit;
+
+-------------------------------------------------------------------------------
+
+
+
 
 
 
