@@ -352,6 +352,9 @@ begin
 	return new;
 end $$ language plpgsql;
 
+-- drop function
+drop function myschema.deferrable_func;
+
 -- normal trigger (inserts 3 logs including the deleted one)
 create trigger undeferred_trigger
 after insert on  myschema.tasks
