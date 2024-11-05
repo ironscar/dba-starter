@@ -374,11 +374,15 @@ do $$
 begin
 	insert into myschema.tasks (task_id, task_name, task_desc)
 		values (13, 'Task13', 'The thirteenth task');
+	raise info 'first insert';
 	insert into myschema.tasks (task_id, task_name, task_desc)
 		values (14, 'Task14', 'The fourteenth task');
+	raise info 'second insert';
 	delete from myschema.tasks where task_id = 14;
+	raise info 'first delete';
 	insert into myschema.tasks (task_id, task_name, task_desc)
 		values (15, 'Task15', 'The fifteenth task');
+	raise info 'third insert';
 end $$;
 
 -- reset test case
