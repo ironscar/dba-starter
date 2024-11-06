@@ -7,11 +7,9 @@ A learning project for data engineering and administration of various types of S
 - Oracle [PROGRESS]
 - Postgres [PROGRESS]
   - Current
-    - Try a deferrable trigger with referenced table
-    - For key share
     - Try bulk archiving
   - Next
-    - Administration
+    - Administration (https://www.postgresql.org/docs/9.4/functions-admin.html)
     - Partitions and swaps
     - Sharding
     - Space management

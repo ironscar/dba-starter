@@ -198,7 +198,7 @@ AFTER INSERT OR UPDATE OR DELETE
 ON table
 [REFERENCES reference_table]
 [NOT DEFERRABLE | DEFERRABLE] [INITIALLY IMMEDIATE | INITIALLY DEFERRED]
-[REFERENCING OLD TABLE AS old_table, NEW TABLE AS new_table]
+[REFERENCING OLD TABLE old_table NEW TABLE new_table]
 FOR EACH [ROW | STATEMENT]
 [WHEN (condition)]
 EXECUTE FUNCTION myfunction();
@@ -207,8 +207,18 @@ EXECUTE FUNCTION myfunction();
 - These must always be `AFTER ROW` constraints
 - These don't support `CREATE OR REPLACE`
 - The deferrable modes can only be specified for constraint triggers
-- Current example not working [CHECK]
-  - normal trigger does it at end of row but deferred trigger is correctly happening at end
-  - probably because once it does all the inserts, it still inserts into audit row by row without checking what exists in table
+- `References` allows referencing other tables for foreign-key like behavior but Postgres's official docs recommend not to use them
+- For `referencing`, old table and new table refer to the new rows and old rows affected before and after the operation
+  - this can only be used for an after trigger which is not a constraint trigger
+  - old table can only be specified by delete or update trigger
+  - new table can only be specified by insert or update trigger
+
+- Assume example where a function inserts 3 records and deletes 1 record among them, and we ought to log these inserts
+  - a normal insert trigger will insert into audit table for all 3 records, even though one of them no longer exists
+    - this happens as the normal trigger fires after each insert statement
+  - a deferred trigger will only fire once all statements are complete, but it will still fire for all 3 records
+    - insert statements as is, will still insert into audit table for all 3 records
+    - but if we use an `exists` condition for that record in actual table and then insert, it will not insert the deleted record
+    - adding this condition to the normal trigger will not help as the trigger fires immediately and doesn't wait for delete
 
 ---

@@ -127,6 +127,17 @@ docker run -d \
 
 - Locks are made on table when there are insert/update/delete commands being executed
 - Rows being inserted/updated/deleted are locked from other transactions editing them
-- Selects queries are never blocked
+- Selects queries are never blocked by default
+- Details on locking modes are provided in `https://www.postgresql.org/docs/9.4/explicit-locking.html`
+  - Explicit locking is susceptible to deadlocks
+    - Even row-level locks as a result of regular update statements can cause deadlocks
+    - Postgres detects deadlocks and aborts one of the transactions so as to resolve the deadlock
+    - All objects should be locked in the same order so as to avoid deadlocks (like updating rows in the same order)
+  - Advisory locks are locks made specific to applications
+    - these can be emulated by a DB flag but are more performant and get cleaned up at the end of a session
+    - we should use LIMIT and ORDER BY carefully with this as its uncertain when the lock is applied
+      - we can solve this by doing those operations in an inner query
+- All locks currently held by system can be found in `pg_locks`
+- There is a limit to the number of locks that can be created (be it advisory or regular)
 
 ---

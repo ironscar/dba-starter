@@ -340,15 +340,18 @@ create or replace function myschema.deferrable_func()
 returns trigger as $$
 declare
 	counter int = 0;
+	new_task varchar;
 begin
+	select task_name into new_task from new_table;
+	raise info 'new task = %', new_task;
+	
 	select count(task_id) into counter from myschema.task_audit where entry_date = current_date;
-	if counter >= 2 then
-		raise 'more than 2 inserts, counter = %', counter;
-	else
-		raise info 'current count = %', counter;
-	end if;
+	raise info 'current count = %', counter;
 	insert into myschema.task_audit (task_id, entry_date, operation)
-		values (new.task_id, current_date, 'INSERT');
+		select new.task_id, current_date, 'INSERT' 
+		where exists (
+			select task_id from myschema.tasks where task_id = new.task_id
+		);
 	return new;
 end $$ language plpgsql;
 
@@ -358,6 +361,7 @@ drop function myschema.deferrable_func;
 -- normal trigger (inserts 3 logs including the deleted one)
 create trigger undeferred_trigger
 after insert on  myschema.tasks
+referencing new table new_table
 for each row execute function myschema.deferrable_func();
 
 -- drop normal trigger
@@ -397,11 +401,3 @@ select* from myschema.tasks;
 select* from myschema.task_audit;
 
 -------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
