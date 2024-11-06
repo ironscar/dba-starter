@@ -16,6 +16,8 @@
   - Plan `width` is the width in bytes of the output rows
 - Comparing plans in tables with very less data are not the same as very large data
   - so when doing plans, fill table with realistic amounts of data to check
+- It is not very straightforward to see plans for functions and procedures
+  - the PL/SQL stuff causes errors and doesn't seem to be recognized
 
 ---
 

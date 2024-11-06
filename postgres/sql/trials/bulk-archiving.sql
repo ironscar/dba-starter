@@ -50,47 +50,44 @@ insert into myschema.items (item_id, list_id, part_number, qty)
 	union
 	select 6, 5, 'TPA6', 8;
 
--- select
-with item_counts as (
-	select list_id, count(item_id) item_count
-	from myschema.items
-	group by list_id
-)
-select
-	a.list_id,
-	a.list_name,
-	coalesce(b.item_count, 0),
-	a.deleted_ts
-from myschema.list a
-left join item_counts b
-on a.list_id = b.list_id;
-
-select* from myschema.items;
-
 -- actual archiving job
 do $$
 declare
-	loop_counter int = 0;
 	list_ids int[];
 begin
-	-- log
-	raise info 'run log %', loop_counter;
 
 	-- get lists to be deleted
 	list_ids = array(select list_id from myschema.list where deleted_ts is not null);
 
 	-- if it was 1000 at a time, then we can loop through until list_ids is empty
-	if array_length(list_ids,1) > 0 then
+	if array_length(list_ids, 1) > 0 then
 
-		-- copy list and items using unnest(array)
+		-- copy lists
+		insert into myschema.archived_list (list_id, list_name, deleted_ts, archived_ts)
+			select list_id, list_name, deleted_ts, current_date from myschema.list
+			where list_id = any(list_ids);
 		
-		-- delete items
+		-- delete and insert items in one go
+		with archived_items as (
+			delete from myschema.items
+			where list_id = any(list_ids)
+			returning *
+		) insert into myschema.archived_items
+			select * from archived_items;
 		
-		-- delete list
-	
+		-- delete lists
+		delete from myschema.list where list_id = any(list_ids);
+	else
+		raise info 'no lists to archive';
 	end if;
 		
 end $$;
+
+-- select
+select* from myschema.list;
+select* from myschema.items;
+select* from myschema.archived_list;
+select* from myschema.archived_items;
 
 -- cleanup
 drop table myschema.list;
