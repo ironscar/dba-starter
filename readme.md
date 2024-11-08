@@ -4,18 +4,8 @@ A learning project for data engineering and administration of various types of S
 
 ## Todo
 
-- Oracle [PROGRESS]
+- Oracle [PAUSED]
 - Postgres [PROGRESS]
-  - Current
-    - Database Strategy
-  - Next
-    - Administration (https://www.postgresql.org/docs/9.4/functions-admin.html)
-    - Partitions and swaps
-    - Sharding
-    - Space management
-    - Optimization configurations
-    - Backup/Restore
-    - DB links
 - Redis
 - ScyllaDB
 - MongoDB
