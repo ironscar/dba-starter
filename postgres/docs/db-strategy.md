@@ -37,5 +37,6 @@
       - currently works with a single instance of a vertically scaled machine which is an SPOF
         - could create separate repositories for each instance
   - Can look at Liquibase (which TI is considering)
+  - Some links at https://jirasoulrupture.atlassian.net/wiki/spaces/~557058ba5230b20e9f4beaacdf07e9cbe66191/pages/667811841/Nov+2024#DB-Version-control
 
 ---

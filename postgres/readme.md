@@ -11,11 +11,13 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 5. Procedures & Functions [DONE]
 6. Triggers [DONE]
 7. Administration [NOW]
-8. Partitions & swaps
-9. Sharding
-10. Space management
-11. Optimization configurations
-12. Backup/Restore
-13. DB links
+8. Partitions & exchange
+9.  Space management
+10. Optimization configurations
+11. Backup/Restore
+12. DB links
+13. Sharding
+14. High availability & replication
+15. DB DevOps strategy
 
 ---
