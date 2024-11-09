@@ -71,3 +71,27 @@
   - `pg_dump` works even if the database is being used concurrently
 
 ---
+
+## Managing Schemas
+
+- By default, if no schema specified, all DB objects get created under the `public` schema which is automatically created by Postgres
+- To access objects in a schema not belonging to current user, current user needs the `USAGE` privilege on the schema
+- To create objects in a schema not belonging to current user, current user needs the `CREATE` privilege on the schema
+- Every user has these privileges on the `public` schema by default
+- We can create multiple objects in the same statement as the create schema as below:
+
+```
+create schema schema_name
+    create table table1 (...)
+    create view view1 select col from table1;
+```
+
+- `pg_namespace` stores all the schemas in the database
+- We can create a schema for a different user as owner by `create schema schema1 authorization user1`
+- Altering schemas supports:
+  - `alter schema schema1 rename to schema2`
+  - `alter schema schema1 owner to user1`
+- We can drop schema with/out the `cascade` option specifying if all internal objects should be dropped or exception is thrown
+- We can drop multiple schemas in the same query in comma separated way
+
+---

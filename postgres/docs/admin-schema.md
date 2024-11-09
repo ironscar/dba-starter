@@ -1,2 +1,0 @@
-# DB Administration: Managing schemas
-

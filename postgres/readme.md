@@ -15,9 +15,11 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 9. Space management
 10. Optimization configurations
 11. Backup/Restore
-12. DB links
-13. Sharding
+12. DB links & Postgres_fdw
+13. Sharding & Citus
 14. High availability, failover & replication
+    - https://pgdash.io/blog/horizontally-scaling-postgresql.html
+    - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
 15. DB DevOps strategy
 
 ---
