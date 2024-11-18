@@ -20,6 +20,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 14. High availability, failover & replication
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
-15. DB DevOps strategy
+    - Shareplex?
+15. Secret management and auto-update integration
+16. DB DevOps strategy
 
 ---

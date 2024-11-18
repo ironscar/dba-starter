@@ -7,6 +7,7 @@
 - How to decentralize efficiently for horizontal scalability
 - How to keep it all performance-oriented
 - Can we generate a data lineage graph
+- How to store secrets and manage auto-updates
 - How to achieve end-to-end automation for this with DevOps
 
 ---
@@ -34,7 +35,7 @@
         - could try to make non-editable branches for each env which can only be edited by CI/CD user while making sure merge and deploy happen with no delay
       - weird format for file names specifying unique id and which user to run queries in the file as (latter was rather unintuitive)
       - have this weird concept of using `/` and `@@` which aren't standard SQL
-      - currently works with a single instance of a vertically scaled machine which is an SPOF
+      - currently works with a single instance of a vertically scaled machine which is a SPOF (single point of failure)
         - could create separate repositories for each instance
   - Can look at Liquibase (which TI is considering)
   - Some links at https://jirasoulrupture.atlassian.net/wiki/spaces/~557058ba5230b20e9f4beaacdf07e9cbe66191/pages/667811841/Nov+2024#DB-Version-control

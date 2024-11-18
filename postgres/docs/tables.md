@@ -63,7 +63,7 @@
 - Except `NOT NULL` and `CHECK`, all other inbuilt constraints can be deferred as below:
   - `SET CONSTRAINTS key_name DEFERRED;` or `ALTER TABLE table_name ALTER CONSTRAINT constraint_name DEFERRABLE;`
   - the former only works in transactions as it uses `SET`, the latter only works for foreign key constraints currently
-  - so we can essentially drop the constrainnt and add it as deferrable for others
+  - so we can essentially drop the constraint and add it as deferrable for others
 - We can see the `condeferrable` and `condeferred` columns in `pg_constraint` table to see what type of deferring it is
 - It can be useful for cases like `https://emmer.dev/blog/deferrable-constraints-in-postgresql/#use-cases`
 - Deferred constraints temporarily allow duplicate values and hence are less performant than default constraints which optimize on never allowing duplicate values at any point of time

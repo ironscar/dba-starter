@@ -56,14 +56,14 @@
   - fill table to predicted level of data if possible
   - check cost of query (use `Explain Analyze` for selects and just `Explain` for others)
   - add index, explain plans and compare them for improvements if any
-  - if no improvements, no the time to add indexes yet
+  - if no improvements, not the time to add indexes yet
 - Reindexing indexes are required if indexes get currupted
   - requires the schema prefix when using `REINDEX INDEX`
   - we can use `REINDEX CONCURRENTLY` option to not block reads during creation of index
   - we can use `REINDEX INDEX` to rebuild a single index
   - we can use `REINDEX TABLE` to rebuild all indexes of a table
   - we can use `REINDEX SCHEMA` to rebuild all indexes of a schema (must be run by owner of schema)
-  - we can use `REINDEX DATABASE` to rebuild all indexes of a database (must be run by owner of schema)
+  - we can use `REINDEX DATABASE` to rebuild all indexes of a database (must be run by owner of database)
   - reindexing can take a few options:
     - verbose gives more output about what indexes were reindexed etc
     - concurrent doesn't block reads but does block writes on the table

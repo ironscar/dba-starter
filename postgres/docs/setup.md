@@ -23,7 +23,7 @@
 
 ```
 docker run -d \
-    -p 5432:5432
+  -p 5432:5432
 	--name postgresdb1 \
 	-e POSTGRES_PASSWORD=******** \
 	-e PGDATA=/var/lib/postgresql/data/pgdata \
