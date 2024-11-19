@@ -10,11 +10,11 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 4. Materialized views [DONE]
 5. Procedures & Functions [DONE]
 6. Triggers [DONE]
-7. Administration [NOW]
-8. Partitions & exchange
-9. Space management
-10. Optimization configurations
-11. Backup/Restore
+7. Administration [DONE]
+8. Space management [NOW]
+9. Partitions & exchange
+10. Backup/Restore
+11. Optimization configurations
 12. DB links & Postgres_fdw
 13. Sharding & Citus
 14. High availability, failover & replication
