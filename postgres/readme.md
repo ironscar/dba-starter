@@ -11,8 +11,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 5. Procedures & Functions [DONE]
 6. Triggers [DONE]
 7. Administration [DONE]
-8. Space management [NOW]
-9. Partitions & exchange
+8. Space management [DONE]
+9. Partitions & exchange [NOW]
 10. Backup/Restore
 11. Optimization configurations
 12. DB links & Postgres_fdw
