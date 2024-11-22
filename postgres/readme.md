@@ -15,6 +15,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 9. Partitions & exchange [NOW]
 10. Backup/Restore
 11. Optimization configurations
+    - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
+    - with parallel_workers
 12. DB links & Postgres_fdw
 13. Sharding & Citus
 14. High availability, failover & replication
