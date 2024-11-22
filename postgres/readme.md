@@ -8,9 +8,9 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 2. Tables [DONE]
 3. Indexes [DONE]
 4. Materialized views [DONE]
-5. Procedures & Functions [DONE]
-6. Triggers [DONE]
-7. Administration [DONE]
+5. Procedures, Functions & Triggers [DONE]
+6. Administration [DONE]
+7. Role & User management [DONE]
 8. Space management [DONE]
 9. Partitions & exchange [NOW]
 10. Backup/Restore
