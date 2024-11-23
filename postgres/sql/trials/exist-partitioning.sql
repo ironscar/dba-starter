@@ -36,6 +36,7 @@ declare
 	v_current int = 0;
 	v_count int = 1;
 	v_new_partition text;
+	backup_tb text;
 begin
 	-- get min and max values
 	-- use format where each entry is a new argument (even if same value is repeated, it comes twice in args)
@@ -70,9 +71,16 @@ begin
 		v_current = v_current + range_limit;
 	end loop;
 
-	-- drop original table and rename new table to old table name
-	execute format('drop table %I', tb_name);
+	-- rename original table to backup and new table to original table to redirect all data
+	backup_tb = tb_name || '_bk';
+	execute format('alter table %I rename to %I', tb_name, backup_tb);
 	execute format('alter table %I rename to %I', new_tb_name, tb_name);
+
+	-- insert all remaining rows that came into old during process into new (will be small number now)
+	execute format('insert into %I select * from %I', tb_name, backup_tb);
+
+	-- drop old table
+	execute format('drop table %I', backup_tb);
 	commit;
 
 end $$ language plpgsql;
@@ -85,6 +93,7 @@ select* from exist_tb;
 select* from exist_tb_1;
 select* from exist_tb_2;
 select* from exist_tb_3;
+select* from exist_tb_bk;
 select* from exist_tb_partition;
 
 -- cleanup
