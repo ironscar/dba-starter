@@ -5,6 +5,10 @@
 - use `CREATE TABLE` command to do this
 - we can set the type to `serial` to auto-generate ids
 - we can delete tables using `drop table {tableName}`
+- we can also create a table from another table as `create table tb as table tb2`
+  - this effectively copies the structure & all data
+  - if we want a subset of data, `create table tb as select* from tb2 where <condition>`
+  - if we just want to copy structure, we can say `create table tb as table tb2 with no data`
 
 ## Alter
 

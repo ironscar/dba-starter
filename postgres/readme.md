@@ -13,9 +13,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 7. Role & User management [DONE]
 8. Space management [DONE]
 9. Partitions [NOW]
-    - Update records to see if partitions update
     - Inheritance
-    - Swap/Exchange
 10. Backup/Restore
 11. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)

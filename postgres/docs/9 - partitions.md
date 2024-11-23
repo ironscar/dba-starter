@@ -18,6 +18,8 @@
   - this will also include indexes on the partition columns
   - we can join with `pg_class` on the `oid` column to `inhrelid` and check `relkind` has value `r` (indexes are `i`)
 - we can select data from a partition by `select* from <partition_name>`
+- During inserts or updates to parent table, records automatically get added into the correct partition
+- Creating too many partitions can eventually add performance overheads
 
 ### Create Partitions
 
@@ -41,6 +43,8 @@
   - if we attach/detach partitions here, indexes for each partitions persist
   - if index exists on to-be-attached partition, we can attach the index to parent table's index using `ALTER INDEX`
     - there are a few caveats with locking tables though so refer last section of `https://www.postgresql.org/docs/current/ddl-partitioning.html#DDL-PARTITIONING-DECLARATIVE-MAINTENANCE`
+- You can also define a `DEFAULT` partition in case rows don't match any explicit partitions as below
+  - `CREATE TABLE table_p01 PARTITION OF table DEFAULT`
 
 ### Drop partitions
 
@@ -69,16 +73,42 @@
 
 ---
 
+## Partition exchange
+
+- Partition swap refers to swapping the records of a partition with records of a non-partitioned table
+- Postgres doesn't have a Partition swap or exchange mechanism or it has to be done manually
+- We can detach the partition which is currently part of the partitioned table
+- We can attach the non-partitioned table as a new partition of the partitioned table
+- Effectively, the records of the non-partitioned table are now in the partitioned table and the previous partition is now a separate non-partitioned table
+- Indexes persist attach/detach operations so they remain consistent through this
+- Uses cases
+  - `Archiving data`: We can have the original and archived table, both partitioned
+    - the original can have just 2 partitions while the archived can have any number
+    - both partitions must be same rules to avoid validation errors and overlaps
+    - at certain point of time, we detach the older partition from original and attach it to archived
+    - if these tables are in different tablespaces, we can alter tablespace of archived partition
+    - then, we create a new partition for original and wait to repeat the process
+    - the process repeat will need to happen on a cron job of some sort
+
+---
+
+## Partitioning existing table
+
+- Figure how to partition existing table, refer `exist-partitioning.sql`
+- Shows how to use `EXECUTE` and `format()` to dynamically create tables and partitions
+  - Also discusses the differences between `format()` and `using`
+
+---
+
 ## Inheritance Partitioning
 
 ### Introduction
 
 - Internally declarative partitions are linked by `Inheritance` but we cannot use all inheritance features for such partitions
-- Continue from https://www.postgresql.org/docs/current/ddl-partitioning.html#DDL-PARTITIONING-USING-INHERITANCE
 
 ---
 
-## References
+## References [TODO-LAST]
 
 - https://medium.com/@marinakrasnovatr81/postgresql-hash-partitioning-for-uuid-columns-no-triggers-and-rules-evenly-distribution-db7c8e9a9088
 

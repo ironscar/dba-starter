@@ -33,6 +33,11 @@ create table to_range_partition_tb_p400 partition of to_range_partition_tb for v
 -- later insert
 insert into to_range_partition_tb values (4, 'Amy', 345);
 
+-- update record in partition
+update to_range_partition_tb set
+	price = 96
+where id = 3;
+
 -- to find all table partitions (relkind r implies tables, otherwise index inheritance also shows up)
 select distinct pi.inhparent::regclass, pi.inhrelid::regclass 
 from pg_inherits pi
@@ -60,9 +65,5 @@ drop table to_range_partition_tb;
 ----------------------------------------------------------------
 
 -- create table for inheritance partitioning
-
-
-
-
 
 
