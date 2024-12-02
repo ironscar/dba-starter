@@ -16,6 +16,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 10. Backup/Restore [NOW]
 11. DB links & Postgres_fdw
     - Foreign tables
+    - Postgres CDC (Change data capture)
 12. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
     - with parallel_workers
@@ -24,7 +25,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
     - Shareplex?
-15. Secret management and auto-update integration
-16. DB DevOps strategy
+15. DB DevOps strategy
+    - Secret management and auto-update integration
 
 ---
