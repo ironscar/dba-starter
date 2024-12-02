@@ -145,6 +145,7 @@
   - For functions, we have to enclose the main body within `$$` and `$$ language plpgsql`
 - To delete a trigger, use `drop trigger <trigger_name> on <table>;`
   - it takes option for `CASCADE` and `RESTRICT` which either deletes or throws error due to dependent objects
+  - `CASCADE` doesn't seem to delete the dependent objects though
 - We can change name of trigger by `ALTER trigger <trigger_name> on <table> rename to <new_trigger_name>`
 - We can enable or disable triggers as
   - `ALTER table <table> <disable/enable> trigger <trigger_name>` or `ALTER table <table> <disable/enable> ALL`

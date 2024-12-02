@@ -12,13 +12,13 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 6. Administration [DONE]
 7. Role & User management [DONE]
 8. Space management [DONE]
-9. Partitions [NOW]
-    - Inheritance
-10. Backup/Restore
-11. Optimization configurations
+9. Partitions [DONE]
+10. Backup/Restore [NOW]
+11. DB links & Postgres_fdw
+    - Foreign tables
+12. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
     - with parallel_workers
-12. DB links & Postgres_fdw
 13. Sharding & Citus
 14. High availability, failover & replication
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html

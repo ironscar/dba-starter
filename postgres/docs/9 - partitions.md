@@ -105,11 +105,43 @@
 ### Introduction
 
 - Internally declarative partitions are linked by `Inheritance` but we cannot use all inheritance features for such partitions
-
----
-
-## References [TODO-LAST]
-
-- https://medium.com/@marinakrasnovatr81/postgresql-hash-partitioning-for-uuid-columns-no-triggers-and-rules-evenly-distribution-db7c8e9a9088
+- Some extra features with inheritance are:
+  - child tables can have extra columns not in parent
+  - allow multiple inheritance (the child table gets a union of the columns in it and merging columns with same name if any exist)
+  - user-defined partitioning methods allowed in addition to range/hash/list
+- Query performance maybe poor with such tables due to inefficient pruning of child tables
+  - the config param `constraint_exclusion` is set to `partition` for inheritance
+    - available values are `on`, `off` and `partition`
+    - `on` turns it on for all tables but generally worsens performance for simple queries
+    - `off` turns if off for everything
+    - `partition` turns it on for inheritance child tables and `UNION ALL` queries
+  - this helps in optimizing query performance by eliminating child tables that are irrelevant to query based on added constraints
+  - this setting has a smaller effect on performance/speed compared to `enable_partition_pruning` which applies to declarative partitioning
+  - in general, inheritance will be slower than declarative partitioning due to using triggers
+- It starts with defining the parent/root table with a regular `CREATE TABLE` command
+  - this table shouldn't have any indexes, foreign keys or unique constraints as it doesn't apply to the children or help
+  - any check constraints on this table get applied to all children equally
+- Then we create child tables that inherit from root table with the `INHERITS (<parent>)` clause
+  - each of these should also specify a `CHECK` constraint to define non-overlapping records per child
+  - if need to create indexes, we should create it on the child tables
+- Next, we define triggers for insert
+  - so that if we insert into parent table, it finds its way into the appropriate child table
+  - if we don't add this trigger, it inserts the rows directly into parent and not into child tables
+- If we try to update records in parent table across children
+  - it throws errors due to `CHECK` constraint
+  - this doesn't get solved even if we add a `BEFORE UPDATE` trigger on parent to internally delete and insert (we may have to put separate update triggers on each child to handle this)
+  - delete on the parent table however successfully removes it from the child table as well
+  - so we have to `delete returning insert` on parent table which internally uses the trigger to decide the new child while removing it from old child
+- For dropping tables, we have to drop all the children first and then drop the parent
+  - Its possible to drop all children in one statement like `drop table child1,child2...`
+  - Or we can use the `cascade` option which does drop the child tables as well
+- To remove a child table from inheritance, we can use `ALTER TABLE child NO INHERIT parent`
+- `VACUUM` and `ANALYZE` commands need to be run separately on each child table as otherwise it only runs on parent
+- Inheritance slows queries down considerably when the number of child tables is very large (thousands)
+- Other inheritance features include:
+  - `ONLY` keyword on DML where all tables below the specified table in the inheritance hierarchy are ignored
+  - `ALTER TABLE` commands get propagated throughout the inheritance hierarchy
+  - `GRANTS` and permission checks are only checked at the parent level and not at the child level
+  - `Foreign tables` are also supported in inheritance hierarchies but operations not supported on foreign tables are disabled across the entire hierarchy even for non-foreign tables
 
 ---
