@@ -66,10 +66,28 @@
   - `-j` number of parallel jobs to use when restoring
   - `-L` specifies a file with list of files that you want to restore from (if you have multiple files)
 - There are other flags mentioned at https://neon.tech/postgresql/postgresql-administration/postgresql-restore-database
+- Restoring backups can even override passwords to match those of the backed up database if they were previously different
+
+### Restore single database from SQL file
 
 - We will test this by creating a new DB container and then using pg_restore on top of that
-  - we will do this once with just `student_tracker_backup.sql`
-  - then we will delete this container
-  - and we repeat with `all_databases_backup.sql`
+- Run `psql -U postgres -d postgres /root/student_tracker_backup.sql` from terminal
+  - We do this as `pg_restore` doesn't allow restoring from SQL files (text format dump)
+- This basically copies data and DB objects that were in the student_tracker DB from container 1 into the postgres DB container 2
+- But some things fail because they somehow didn't get captured in the backup and weren't in the new DB either
+- When deleting container, remember to clear the volume backup at `/datadir/{whatever-folder}` so that the new container doesn't automatically pick up on that data
+
+### Restore all databases from SQL file
+
+- We will test this by creating a new DB container and then using pg_restore on top of that
+- Run `psql -U postgres -d postgres /root/all_databases_backup.sql` from terminal
+  - We do this as `pg_restore` doesn't allow restoring from SQL files (text format dump)
+- This basically copies all data and DB objects from container 1 into container 2
+- Some things may still fail if certain objects like the role already exist
+- When deleting container, remember to clear the volume backup at `/datadir/{whatever-folder}` so that the new container doesn't automatically pick up on that data
+
+### Restore all databases using TAR file
+
+- we will do this with pg_restore using tar now [TODO]
 
 ---
