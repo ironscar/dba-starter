@@ -4,6 +4,7 @@
 
 - How to handle version control
 - How to track what is deployed easily
+- How to easily take backups
 - How to decentralize efficiently for horizontal scalability
 - How to keep it all performance-oriented
 - Can we generate a data lineage graph

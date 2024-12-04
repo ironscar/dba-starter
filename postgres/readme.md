@@ -14,18 +14,25 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 8. Space management [DONE]
 9. Partitions [DONE]
 10. Backup/Restore [NOW]
+    - pg_dump & pg_dumpall [DONE]
+    - pg_restore [DONE]
+    - pg_basebackup [NOW]
+    - PITR
+    - Streaming replication standby DB
 11. DB links & Postgres_fdw
     - Foreign tables
     - Postgres CDC (Change data capture)
 12. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
     - with parallel_workers
+    - Vacuum/Analyze
 13. Sharding & Citus
 14. High availability, failover & replication
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
     - Shareplex?
-15. DB DevOps strategy
+15. Migration across DB versions
+16. DB DevOps strategy
     - Secret management and auto-update integration
 
 ---
