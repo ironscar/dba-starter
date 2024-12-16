@@ -18,7 +18,6 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - pg_restore [DONE]
     - pg_basebackup [NOW]
     - PITR
-    - Streaming replication standby DB
 11. DB links & Postgres_fdw
     - Foreign tables
     - Postgres CDC (Change data capture)
@@ -30,6 +29,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 14. High availability, failover & replication
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
+    - https://www.postgresql.org/docs/current/runtime-config-replication.html
+    - Streaming replication standby DB
     - Shareplex?
 15. Migration across DB versions
 16. DB DevOps strategy

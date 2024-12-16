@@ -128,10 +128,43 @@
 - It can only restore for the same DB version on same platform so new versions of DB on different OS cannot be restored unlike `pg_dump`
 - It is possible to run multiple base-backups at the same time but its better from a performance standpoint to take one backup and then copy it
 - All flags for command can be found at https://www.postgresql.org/docs/current/app-pgbasebackup.html
+- It first does a checkpoint on connecting to the Postgres server to copy
+  - Refer to https://www.cybertec-postgresql.com/en/postgresql-what-is-a-checkpoint/ for what is checkpoint
+  - this is usually slow as it waits for the next DB checkpoint (default using the value `-c spread`)
+  - we can make it immediate by specifying value as `-c fast`
+- The wal-method by default is `-X f` (fetch) which copies WAL (write-ahead-log) files at end of backup
+  - but its possible to send the WAL files in parallel by opening a second parallel connection using `-X s` (stream)
+- Backup data is inconsistent without the WAL files if DB is being modified during backup
+
+#### Full backup
+
+- Command looks like `pg_basebackup -h <host> -U <dbuser> -D <directory to copy to>`
+  - We create a new postgres container
+  - the previous container is at `192.168.196.2` and new one is at `192.168.196.3` (different for everyone)
+  - we log into new container to run the base-backup command pointing to the ip of old container & store files in `/root/basebackup`
+  - this fails with no replication connection for new container to old container in `pg_hba.conf`
+  - so we add the entry as `host all all 192.168.196.3/32 trust` to `pg_hba.conf` of old container
+  - then we have to restart the old container for changes to effect
+  - next error is `role root doesn't exist`
+  - so we add `-U postgres` and then it gets to work and copies all the data to second container
+- In addition to all contents in `/var/lib/postgresql/data/pgdata`, it has a backup_label and backup_manifest
+  - this manifest file can be used to verify the backup using `pg_verifybackup` and for incremental backups
+- To restore the backup, we essentially have to replace the contents of current `pgdata` with this backup
+  - So `cp -r /root/basebackup /var/lib/postgresql/data` to copy all contents of `basebackup` dir into `data` dir
+  - Then in `data` dir, rename the `pgdata` dir to `pgdata_ini` by `mv pgdata pgdata_ini`
+  - Also rename `basebackup` dir to `pgdata` using `mv basebackup pgdata`
+  - Finally, we have to restart the container for changes to take effect
+- This, like `pg_dumpall` copies even the password to be same even if it were different before
+- For some cleanup
+  - We will rename `basebackup` to `basebackup_full` to segregate it from incremental backups
+
+#### Incremental backup
+
+- [CONTINUE-HERE]
+
+---
 
 - [TODOS]
-  - Continue from https://www.postgresql.org/docs/current/app-pgbasebackup.html and https://www.cybertec-postgresql.com/en/pg_basebackup-creating-self-sufficient-backups/
-  - Full backup with base backup
   - Incremental backup with base backup & combine backup
   - PITR
   - Streaming replication standby
