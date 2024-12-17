@@ -30,9 +30,11 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
     - https://www.postgresql.org/docs/current/runtime-config-replication.html
-    - Streaming replication standby DB
+    - https://www.postgresql.org/docs/current/warm-standby.html
     - Shareplex?
-15. Migration across DB versions
+15. Upgrade to DB versions
+    - Try incremental base backups at this point
+    - Can we automate this too? 
 16. DB DevOps strategy
     - Secret management and auto-update integration
 

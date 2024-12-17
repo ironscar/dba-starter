@@ -160,13 +160,40 @@
 
 #### Incremental backup
 
-- [CONTINUE-HERE]
+- This is only available from Postgres 17 and not in Postgres 16 [UNTESTED]
+- The only addition here is the `-i <manifest_file>` flag that needs the manifest file from the last backup
+- Let's also enable `-P` for reporting so that it adds stats to `pg_stat_progress_basebackup`
+- We also update a table with update statement before taking the backup so that new container and old container differ
+- Then we use the `pg_combinebackup <backup_full> <backup_incr1> <backup_incr2> -o <output_backup_dir>` command
+  - the backups specified have to start with full and can specify as many incremental backups in order
+  - the `output_backup_dir` will then house the final backup to be used as data directory
 
----
+### Point-in-time Recovery (PITR)
 
-- [TODOS]
-  - Incremental backup with base backup & combine backup
-  - PITR
-  - Streaming replication standby
+- Continue from https://www.postgresql.org/docs/16/continuous-archiving.html
+- This doesn't save details from the config files like `pg_hba.conf` or `postgresql.conf`
+- We take a backup of the database and then continue archiving WALs
+- WAL files are stored in `/var/lib/postgresql/data/pgdata/pg_wal`
+- Then based on time, we can just replay archived WALs till that time to get the version of the DB at that time
+  - `pg_dump` and `pg_dumpall` are logical backup tools and cannot be used for this
+  - needs WALs starting from the base full backup
+  - only works for full database server and not specific entities in it
+- A Postgres system generates WAL files in segments of 16MB, each having a numeric name specifying its sequence position
+  - when not using WAL archiving, the system renames these sequences and recycles them once the WALs have been written to disk
+  - to do archiving of WALs, the `wal_level` should be `replica` or higher and `archive_mode` to `on` where default is `off` (check in `pg_settings` table)
+  - we also need to specify the command to use for archiving in `archive_command` (only used if `archive_library` unset)
+- We can set the `archive_command` to `'test ! -f /root/archived_wals/%f && cp %p /root/archived_wals/%f'`
+  - we will create `archived_wals` directory and use `chown postgres archived_wals` to make `postgres` user as owner (otherwise archiving fails due to no access)
+  - this tests if a certain WAL file (file specified by `%f`) exists in the archived directory and if not, copies it from its actual path (`%p`)
+  - this command must return a 0 exit status so that Postgres knows to recycle the actual WAL file
+  - we would essentially start archiving these in the primary server and then copy it over to secondary server to restore along with a base backup 
+  - we must take a new base backup after setting up WAL archiving to make sure no WALs were deleted in the middle
+- We go into `postgresql.conf` in data directory, modify the settings as specified above, and restart the container
+
+- Now, archiving only happens once the WAL segment is completed, which may not happen often in a local container DB
+  - to force archive, we can set `archive_timeout` to 60 (seconds is the unit)
+  - this will bloat the archive storage since even these WAL files are as big as the usual WAL files
+  - maybe undo the timeout after test (set it back to 0 to disable it)
+- We can check when something went wrong with archiving in the `pg_stat_archiver` (though it doesn't specify why it failed)
 
 ---
