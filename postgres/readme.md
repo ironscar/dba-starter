@@ -16,8 +16,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 10. Backup/Restore [NOW]
     - pg_dump & pg_dumpall [DONE]
     - pg_restore [DONE]
-    - pg_basebackup [NOW]
-    - PITR
+    - pg_basebackup [DONE]
+    - PITR [NOW]
 11. DB links & Postgres_fdw
     - Foreign tables
     - Postgres CDC (Change data capture)
@@ -34,7 +34,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Shareplex?
 15. Upgrade to DB versions
     - Try incremental base backups at this point
-    - Can we automate this too? 
+    - Can we automate upgrades too? 
 16. DB DevOps strategy
     - Secret management and auto-update integration
 
