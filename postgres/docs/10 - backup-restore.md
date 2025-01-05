@@ -194,6 +194,7 @@
   - to force archive, we can set `archive_timeout` to 300 (seconds is the unit => 5 minutes)
   - this will bloat the archive storage since even these WAL files are as big as the usual WAL files
   - maybe undo the timeout after test (set it back to 0 to disable it) or set `archive_mode = off`
+  - alternatively, we can also use `select pg_switch_wal();` to force-switch WAL files regardless of timeout
 - Postgres seems to create multiple WAL files ahead of time
   - at the end of the `archive_timeout`, it checks if there have been any updates to the DB
   - if not, no WAL files are archived
@@ -203,40 +204,26 @@
   - it also goes ahead and creates even newer ones, to use once these get switched out too
 - We can check when something went wrong with archiving in the `pg_stat_archiver` (though it doesn't specify why it failed)
 
-[TRIAL]
-
-- Update first name of student to `Iron`
-- Deleted all archived WALs and restarted archiving with 5 minute timeout
-- First archive is `000000010000000000000012` at 01:02
-- Then we took the backup, it actually archived some more WALs and generated a `<WAL>.<position>.backup` file (exact file mentioned below)
-- This archive was `000000010000000000000014.00000028.backup` at 01:04
-- Then we updated first name to `Iron2`
-- Next archive was `000000010000000000000015` at 01:09
-- Then we inserted a new row in student
-- Next archive was `000000010000000000000016` at 1:14
-- Then we delete the new row in student and updated first name back to `Iron`
-- Next archive was `000000010000000000000017` at 1:19
-- Then we set `archive_mode = off` in `postgresql.conf` and restart the container
-- On restart, we see that it has also archived `000000010000000000000018` at 1:19
-- Now, we create a new container and copy the `basebackup_full` and `000000010000000000000014` file to start with
-  - actually we copied all the WALs but we can move the others to a different location momentarily
-  - we can delete WALs before the WAL stored as `WAL.position.backup` file but we will move those out as well
-- Then we also used `chown -R postgres:postgres <folder/files>` to make `postgres` the owner of all files in `archived_wals` and `basebackup_full`
-- Omit files from `pg_wal` of backup as it reduces risk of mistakes (`rm *` will remove all WAL files and throw error for `archive_status` directory without deleting it)
-- Omit files from `pg_replslot` of backup so that replication slots of primary dont become part of backup (may lead to indefinite archiving of WAL files)
-  - this was empty so no action required this time
-- May want to stop user connections to the server by updating `pg_hba.conf`
-- We also have to update `postgresql.conf` of backup to add `restore_command = 'cp /var/lib/postgresql/data/archived_wals/%f %p'`
-  - since the backup was taken while `archive_mode` was on so turn it back off here as we don't need it
-  - no changes though if its actually needed
-- Lastly, we need to create a file called `recovery.signal` inside `basebackup_full` so that the server goes into recovery mode
-  - make sure to use `chown` to change ownership to postgres
-- Since we are going to load from the base-backup, let's also get rid of the current directory and copy over `basebackup_full` again as `pgdata`
-- Then we attempt to restart the container
+- Take full backup of postgresdb1 in postgresdb2 and then dont touch postgresdb2
+  - in fact shut down postgresdb2 to avoid confusion
+- Then we take full backup of postgresdb1 in postgresdb1 at `11:57:03`
+  - latest archived WAL is `000000010000000000000034`
+- Now we make the changes in the base backup as required
+  - including setting the `restore_command = 'cp /var/lib/postgresql/data/archived_wals/%f %p'`
+- Then we make a few updates from Iron to Iron4 while switching WAL as we go
+  - Iron -> Iron2 at `11:59:57` with WAL `000000010000000000000035`
+  - Iron2 -> Iron3 at `12:00:58` with WAL `000000010000000000000036`
+  - Iron3 -> Iron4 at `12:01:49` with WAL `000000010000000000000037`
+- Then we rename the backup dir as pgdata and restart the container
+  - final archived wal was `00000002000000000000003F`
+  - we see that recovery was successful and all updates till Iron4 exist even though they weren't there at time of basebackup
+- Implying, that archived WALs can only be used on the same database system and not on another server due to mismatch in database identifier
+- Try removing the latest 2 WAL files and see if only updates till Iron3 are recovered
+  - Won't be possible as the latest WAL file will get added in on restart
+- We can set the `recovery_target_time = '2025-01-05 12:00:30+00'` in `postgresql.conf` to recover upto that time (set the actual time, here is a format example only)
+  - this only shows updates till Iron2
 
 [FURTHER-TODOS]
-- This is not working as database is not starting up with error `could not find required checkpoint record`
-  - Probably need to take a proper base backup again while archiving is enabled and then retry
-- Try setting `recovery_target_time = '2024-12-17 12:45:00+00'` in `postgresql.conf` to recover upto that time (set the actual time, here is a format example only)
+- Check how to change the database identifier so that you can backup/recover to different server
 
 ---
