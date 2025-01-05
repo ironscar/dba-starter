@@ -225,5 +225,7 @@
 
 [FURTHER-TODOS]
 - Check how to change the database identifier so that you can backup/recover to different server
+  - check if we can change the `pg_control` file system id to that of the original or does that happen automatically during basebackup
+  - turns out that WAL files include an LSN (log sequence number) to identify which database it belongs to
 
 ---
