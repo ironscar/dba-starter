@@ -222,7 +222,7 @@
 - Try removing the latest 2 WAL files and see if only updates till Iron3 are recovered
   - Won't be possible as the latest WAL file will get added in on restart
 - We can set the `recovery_target_time = '2025-01-05 12:00:30+00'` in `postgresql.conf` to recover upto that time (set the actual time, here is a format example only)
-  - this only shows updates till Iron2
+  - this only shows updates till Iron2 which is as expected and works correctly
 
 #### PITR in different server
 
