@@ -189,7 +189,6 @@
   - we would essentially start archiving these in the primary server and then copy it over to secondary server to restore along with a base backup 
   - we must take a new base backup after setting up WAL archiving to make sure no WALs were deleted in the middle
 - We go into `postgresql.conf` in data directory, modify the settings as specified above, and restart the container
-
 - Now, archiving only happens once the WAL segment is completed, which may not happen often in a local container DB
   - to force archive, we can set `archive_timeout` to 300 (seconds is the unit => 5 minutes)
   - this will bloat the archive storage since even these WAL files are as big as the usual WAL files
@@ -203,6 +202,8 @@
   - it also tends to archive the current WAL file when the container is shut down (though we shouldn't depend on this)
   - it also goes ahead and creates even newer ones, to use once these get switched out too
 - We can check when something went wrong with archiving in the `pg_stat_archiver` (though it doesn't specify why it failed)
+
+#### PITR in same server
 
 - Take full backup of postgresdb1 in postgresdb2 and then dont touch postgresdb2
   - in fact shut down postgresdb2 to avoid confusion
@@ -223,9 +224,61 @@
 - We can set the `recovery_target_time = '2025-01-05 12:00:30+00'` in `postgresql.conf` to recover upto that time (set the actual time, here is a format example only)
   - this only shows updates till Iron2
 
-[FURTHER-TODOS]
+#### PITR in different server
+
 - Check how to change the database identifier so that you can backup/recover to different server
-  - check if we can change the `pg_control` file system id to that of the original or does that happen automatically during basebackup
-  - turns out that WAL files include an LSN (log sequence number) to identify which database it belongs to
+  - we can check the database cluster identifier by `select system_identifier from pg_control_system();`
+  - seems after backup load, both clusters have same identifier so maybe:
+    - we keep two copies of the backup (one with updates to conf and recovery.signal file and one without)
+    - with one backup, we actually initialize the current container without setting restore_command etc
+    - with second backup, we use the archived WAL files and at this point, we expect the DB identifiers to be same and hence work
+- Let's write the trials here again
+  - we want to backup `postgresdb` into `postgresdb2` (current value = Iron)
+    - `postgresdb` id = `7405980916258975775`, `postgresdb2` id = `7456639771534237727`
+  - first, we enable archiving mode on `postgresdb` and then take a base backup from inside `postgresdb2`
+    - latest archived WAL after backup is `000000010000000000000036` at `03:31:10`
+  - now we re-initialize `postgresdb2` with this base-backup but we also keep another copy of this to use with the archived_wals
+    - we don't do anything else at this point (no permission changes, no change in configuration files in either backup etc)
+      - we see that now database cluster ids match
+    - we restart after setting postgresdb2 archive_mode off and verify that ids still match
+  - now, we want to start updating and creating new archived WALs
+    - Iron -> Iron2  in `000000010000000000000037` at `03:38:49`
+    - Iron2 -> Iron3  in `000000010000000000000038` at `03:39:45`
+    - Iron3 -> Iron4  in `000000010000000000000039` at `03:40:11`
+  - now, let's copy over these archived WAL files over to postgresdb2 and set it up with the older backup copy
+    - we do all changes in basebackup and also make sure to change permissions of `archived_wals` in addition to backup directory
+  - then we restart `postgresdb2` and this time we can see all changes from archived WAL files have been restored correctly
+  - we will remove the old directories, archived directory and comment the restore command, then restart again
+    - we can see that it still works and this completes  PITR to backup server (just needed one extra initialization with the backup)
+
+---
+
+### Additional details
+
+- We can find find all recovery target options (defining till what point to recover) in the `postgresql.conf`
+  - date/time (done above)
+  - named restore point
+  - transaction id
+  - WAL name
+- Postgres also has the concept of timelines in terms of backup/recovery
+  - When an archive recovery completes, a timeline is created to identify the WALs generated post-recovery
+    - every recovery generates a `timelineId.history` file in the `pg_wal` directory
+  - This timeline id (in hexadecimal) is the first part of the WAL file
+  - It is possible to archive many different timelines and it is useful in the following use case
+    - when we don't know exactly till what point we need to recover to
+    - we can keep multiple `.history` files and by default, postgres picks the latest one
+    - but we can specify the exact one to pick by setting the `recovery_target_timeline` in conf
+  - We haven't tried this yet as it seems fairly involved so we will check this if it comes up
+- We can configure `standalone hot standby` servers which can continually get the WAL files from primary
+  - this allows read queries on the standby, even during recovery
+  - we will check these out in `High availability, failover & replication` section
+- We use scripts for archiving/recovery, we may want to track errors
+  - for this we can check https://www.postgresql.org/docs/16/runtime-config-logging.html#GUC-LOGGING-COLLECTOR
+  - we can set a way to store these logs in a specified location for debugging purposes (requires conf updates)
+  - we are skipping this now and will come back to it if required
+- Couple of caveats to be aware of
+  - it is recommended not to modify template databases during base backups
+  - it is recommended to take basebackups directly after creating/dropping tablespaces with specific paths
+    - because when recovering to a new machine or directory, the recovery overwrites the data in the tablespace which maybe unintended
 
 ---
