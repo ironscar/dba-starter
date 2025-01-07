@@ -19,7 +19,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - pg_basebackup [DONE]
     - PITR [DONE]
 11. DB links & Postgres_fdw [NOW]
-    - Foreign tables
+    - DB links [DONE]
+    - Foreign data wrappers [TODO]
     - Postgres CDC (Change data capture)
 12. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
