@@ -1,9 +1,11 @@
-# DB links, Foreign tables and CDC
+# DB links and Foreign Data Wrappers
 
 ## DB links
 
 - DB links allow executing queries in a remote database
+  - the remote database needs to have an entry for current database in its `pg_hba.conf`
 - To use dblinks, we need to install an extension by `create extension dblink;`
+  - this is needed only once and survives DB restarts
 - Generally these queries are SELECT but it could be anything that returns rows
   - Like `delete returning *` etc
 - The command looks as `dblink(<connname/connstr>, <sql> [, <failOnError>])`
@@ -18,7 +20,8 @@
 
 ### Single Container Link
 
-- DB link from student_tracker DB to postgres DB inside one container
+- DB link frompostgres DB to student_tracker DB (get data from student_tracker to postgres) inside one container
+  - we can see this connection entry in `pg_stat_activity` in container
 - For this, the host and port parts of connection string can be skipped
 - Use `dblink(dbname=student_tracker user=springstudent password=springstudent options=-csearch_path=)`
   - The `-csearch_path=` specifies postgres to begin each session by removing publicly-writable schemas from search_path so that untrusted uers cannot change behavior of other user's queries
@@ -32,7 +35,8 @@
 
 ### Multi-Container Link
 
-- DB link from student_tracker DB of second container to postgres DB of first container
+- DB link from postgres DB of first container to student_tracker DB of second container (get data from student_tracker of second container to postgres DB of first container)
+  - we can see this connection entry in `pg_stat_activity` in second container
 - Here we will have to specify the host and port as well
   - the host will be the container IP if both contaners on same host, else it will be the VM IPs
   - the port will be the container port (and not the mapped host port) if both containers on same host, else it will be the VM port which is mapped
@@ -57,7 +61,53 @@
   - until it closes the connection due to closing the session or forcibly disconnecting it
   - we can forcibly close it using `dblink_disconnect`
 - Create dedicated DB links for each usecase and close them once not needed anymore
-- Find how many db link connections are open [CHECK]
-  - tried to use `pg_stat_activity` but it only added the local dblink record and not the remote one, even when using persistent connections with `dblink_connect`
+- Find how many db link connections are open
+  - when we open a dblink to same container, we can see a new record in `pg_stat_activity` of container
+  - when we open a dblink to another container, we have to check the `pg_stat_activity` of that container
+  - In pgAdmin, if you try to switch connections to check this, it will automatically close all dblinks
+    - you could first check how many connections are there
+    - then you can create the dblink and query the pg_stat_activity of other container over dblink
+    - then you can see the additional record there from `192.168.196.2` and logged in user as `springstudent` (no application_name)
+
+---
+
+## Foreign data wrappers
+
+- Foreign Data Wrappers (FDW) are a mechanism to access data from external servers
+  - `postgres_fdw` is specifically for fetching data from Postgres servers
+  - there are other FDWs like `oracle_fdw`, `mongo_fdw` and so on to access data from other kinds of DB servers
+- This also needs an extension to be installed as `create extension postgres_fdw;`
+  - this is needed only once and survives DB restarts
+- Then, we have to create a `foreign server` for each remote database that we want to connect to
+  - `create server <serverName> foreign data wrapper postgres_fdw options(host '<host/IP>', port '<port>', dbname '<dbname>')`
+  - the remote database needs to have an entry for current database in its `pg_hba.conf`
+- Next, we have to create a `user mapping` to specify which users can access remote data using the foreign server using which remote user
+  - `create user mapping for <localUser> server <serverName> options (user '<foreignUser>', password 'foreignUserPassword')`
+- After this, we can either create a `foreign table` or import `foreign schema`
+
+### Create Foreign table
+
+- Then, we can create a `foreign table` with the same column name and definitions as the remote table (this is manual)
+  - `create foreign table <foreignTableName> (<colName> <colType>, ...) server <serverName> options (schema_name 'schemaName', table_name '<tableName>')`
+  - it doesn't need you to specify defaults and constraints however, only name and type
+  - since this is manual, it is often preferred to use `import foreign schema` (discussed later)
+- For cleaning up FDWs
+  - first, we drop the foreign table using `drop foreign table <name>`
+  - second, we delete the user mapping using `drop user mapping for <localUser> server <serverName>`
+  - third, we drop the server using `drop server <serverName>`
+- We can view all servers at `pg_foreign_server`, all foreign tables in `pg_foreign_table` and all user mappings at `pg_user_mapping`
+- When a foreign table is active, we can check the second container's `pg_stat_activity` to find yet another record
+  - specifies application_name as `postgres_fdw` but other details are same as the dblink
+
+### Import foreign schema
+
+- `import foreign schema` creates foreign tables that exist on the remote schema
+- this gets over the issue of manually matching the column definitions
+- `import foreign schema <remoteSchema> [LIMIT TO|EXCEPT (<table, ...>)] from server <serverName> into <localSchema>`
+  - it also takes options but the base requirement doesn't need any options
+
+### Other details
+
+- Continue from https://www.postgresql.org/docs/current/postgres-fdw.html
 
 ---

@@ -20,8 +20,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - PITR [DONE]
 11. DB links & Postgres_fdw [NOW]
     - DB links [DONE]
-    - Foreign data wrappers [TODO]
-    - Postgres CDC (Change data capture)
+    - Foreign data wrappers [NOW]
 12. Optimization configurations
     - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
     - with parallel_workers
@@ -37,7 +36,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 15. Upgrade to DB versions
     - Try incremental base backups at this point
     - Can we automate upgrades too? 
-16. DB DevOps strategy
+16. Postgres CDC (Change data capture)
+17. DB DevOps strategy
     - Secret management and auto-update integration
 
 ---

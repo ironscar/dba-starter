@@ -1,3 +1,5 @@
+-------------------------------- DB LINKS -------------------------------------------
+
 -- remove one row from tasks table in student_tracker with user springstudent
 delete from myschema.tasks where task_id = 10;
 
@@ -42,9 +44,56 @@ join (
 ) t
 on s.id = t.parent;
 
+-- track dblinks within container
+select* from pg_stat_activity;
+
+-- track dblinks for container 1 to container 2
+select* from dblink('dblink_remote', 'select datid, usename, application_name, client_addr from pg_stat_activity')
+as t (datid int, usename text, application_name text, client_addr text);
+
 -- disconnect persistent connections explicitly
 select dblink_disconnect('dblink_local');
 select dblink_disconnect('dblink_remote');
 
--- track connections [CHECK]
-select* from pg_stat_activity;
+-------------------------------- FOREIGN DATA WRAPPERS ------------------------------------
+
+-- install extension
+create extension postgres_fdw;
+
+-- create foreign server
+create server pgdb2_server foreign data wrapper postgres_fdw options (
+	host '192.168.196.3', port '5432', dbname 'student_tracker'
+);
+
+-- create user mapping
+create user mapping for postgres server pgdb2_server options (user 'springstudent', password 'springstudent');
+
+-- create foreign table
+create foreign table fdw_tasks (
+	task_id int, 
+	task_name varchar(20),
+	task_desc varchar(20),
+	task_type varchar(10),
+	parent int
+) server pgdb2_server options (schema_name 'myschema', table_name 'tasks');
+-- query data from foreign table (task 10 which is only in container 2 is visible)
+select* from fdw_tasks;
+
+-- import schema
+import foreign schema myschema limit to (tasks) from server pgdb2_server into public;
+-- query data from foreign table imported from schema (task 10 which is only in container 2 is visible)
+select* from tasks;
+
+-- list all foreign servers, foreign tables & user mappings
+select* from pg_foreign_server;
+select* from pg_user_mapping;
+select* from pg_foreign_table;
+
+-- cleanup
+-- remove foreign table
+drop foreign table fdw_tasks;
+drop foreign table tasks;
+-- remove specific user mapping from a foreign server
+drop user mapping for postgres server pgdb2_server
+-- remove foreign server
+drop server pgdb2_server;
