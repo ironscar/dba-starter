@@ -89,11 +89,14 @@ select* from pg_foreign_server;
 select* from pg_user_mapping;
 select* from pg_foreign_table;
 
+-- list all open connections to foreign servers
+select* from postgres_fdw_get_connections();
+
 -- cleanup
 -- remove foreign table
 drop foreign table fdw_tasks;
 drop foreign table tasks;
 -- remove specific user mapping from a foreign server
-drop user mapping for postgres server pgdb2_server
+drop user mapping for postgres server pgdb2_server;
 -- remove foreign server
 drop server pgdb2_server;

@@ -105,9 +105,68 @@
 - this gets over the issue of manually matching the column definitions
 - `import foreign schema <remoteSchema> [LIMIT TO|EXCEPT (<table, ...>)] from server <serverName> into <localSchema>`
   - it also takes options but the base requirement doesn't need any options
+ 
+### Introduction
 
-### Other details
+- Refer https://www.postgresql.org/docs/current/postgres-fdw.html for details on below sections
+- `postgres_fdw` is similar to `dblinks` but can give better performance in many cases
+- `postgres_fdw` currently cannot do `INSERT ON CONFLICT DO UPATE` but can do `INSERT ON CONFLICT DO NOTHING`
+- `postgres_fdw` is able to update records across partitions
+  - but cannot handle some cases where insert and update on same partition is happening in one command
+- Matching of columns on foreign table to remote table is by name and not position
+  - thus, we can declare fewer columns out of order as well
 
-- Continue from https://www.postgresql.org/docs/current/postgres-fdw.html
+### Options
+
+#### FDW options
+
+- FDW options include some parameters but important one not already covered is
+- `application_name` allows specifying an application name that will then show up in `pg_stat_activity` of remote DB
+
+#### Cost estimation options
+
+- There are some cost estimation options that can be specified on foreign server or foreign table
+- specifies how the remote server `Explain` works over the FDW
+- `use_remote_estimate` is a boolean (default false), which when true allows getting costs via `Explain Plan`
+- `fdw_startup_cost` is a float value (default 100), which is the cost of establishing connection
+- `fdw_tuple_cost` is also float value (default 0.2) which is the cost of data transfer over network
+- the float params are user-defined or constant so doesn't seem very useful
+
+#### Remote execution options
+
+- `fetch_size` is a number (default 100) specifying the number of rows that are fetched in a single operation
+- `batch_size` is a number (default 1) specifying number of rows inserted in each insert operation with each batch being one query
+- both can be set for foreign table (precendence) and server
+- `postgres_fdw` attempts to optimize remote queries by reducing number of rows transferred using the WHERE clause and limiting columns
+  - WHERE clauses with built-in functions, operators and types are supported to do entirely on remote
+  - columns that aren't used in query aren't transferred
+  - if there are joins on foreign tables in same foreign server, it will attempt to do the entire join remotely
+- `EXPLAIN VERBOSE` can show what exact query was sent to remote
+
+#### Asynchronous execution options
+
+- `async_capable` is boolean (default false) specifying whether foreign tables can be scanned concurrently for better performance
+- can be set for foreign table (precendence) and server
+- `postgres_fdw` will usually open one connection for a server and execute all queries serially even if different tables are involved
+
+#### Transaction management options
+
+- `postgres_fdw` will commit all remote transactions serially when local transaction gets committed, and same for aborts
+- Performance for above can be improved by following options
+- `parallel_commit` is boolean (default false) can be set on a foreign server and specifies whether all remote transactions can be committed in parallel
+- `parallel_abort` is boolean (default false) can be set on a foreign server and specifies whether all remote transactions can be aborted in parallel
+
+#### Connection management options
+
+- By default, connections to foreign servers are only kept open for that session and then closed at the end of that session
+- We can specify `keep_connections` boolean (defalt false) which can keep them open for subsequent queries in other sessions to use, if true
+- A new connection is made for each new user mapping regardless of this parameter setting
+- The remote transaction isolation reflects the local transaction isolation for now
+
+### Functions
+
+- `postgres_fdw_get_connections()` returns all open connections to foreign servers (only after a foreign table is created)
+- `postgres_fdw_disconnect(<serverName>)` disconnects all open connections to specific foreign server if its not in the middle of a transaction
+- `postgres_fdw_disconnect_all()` disconnects all open connections to all foreign servers if they not in the middle of a transaction
 
 ---

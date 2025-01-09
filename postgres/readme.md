@@ -18,12 +18,12 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - pg_restore [DONE]
     - pg_basebackup [DONE]
     - PITR [DONE]
-11. DB links & Postgres_fdw [NOW]
+11. DB links & Postgres_fdw [DONE]
     - DB links [DONE]
-    - Foreign data wrappers [NOW]
-12. Optimization configurations
-    - temporary tables (https://neon.tech/postgresql/postgresql-tutorial/postgresql-temporary-table)
-    - with parallel_workers
+    - Foreign data wrappers [DONE]
+12. Optimization configurations [NOW]
+    - temporary tables [DONE]
+    - parallel query [NOW]
     - Vacuum/Analyze
 13. High availability, failover & replication
     - https://www.postgresql.org/docs/16/high-availability.html
