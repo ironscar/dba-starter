@@ -23,8 +23,10 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Foreign data wrappers [DONE]
 12. Optimization configurations [NOW]
     - temporary tables [DONE]
-    - parallel query [NOW]
-    - Vacuum/Analyze
+    - parallel query [DONE]
+    - genetic query optimizer [DONE]
+    - vacuum [NOW]
+    - others
 13. High availability, failover & replication
     - https://www.postgresql.org/docs/16/high-availability.html
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
@@ -33,10 +35,10 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://www.postgresql.org/docs/current/warm-standby.html
     - Shareplex?
 14. Sharding & Citus
-15. Upgrade to DB versions
+15. App integrations for procs & functions
+16. Upgrade to DB versions
     - Try incremental base backups at this point
     - Can we automate upgrades too? 
-16. Postgres CDC (Change data capture)
 17. DB DevOps strategy
     - Secret management and auto-update integration
 

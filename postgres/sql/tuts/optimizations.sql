@@ -10,4 +10,7 @@ create temp table my_temp_table as (
 -- doesn't exist if we switch over to a different connection and come back
 select* from my_temp_table;
 
-------------------------- PARALLEL QUERY ----------------------------
+------------------------------ VACUUM --------------------------------
+
+analyze verbose;
+vacuum;
