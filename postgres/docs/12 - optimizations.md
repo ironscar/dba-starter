@@ -8,6 +8,7 @@
 - Useful when we want to isolate some data and store it intermediately instead of adding to query complexity
 - If created within a transaction scope, a temporary table is only visible to that transaction
 - It doesn't have any direct performance gains
+- In most cases however, temporary tables aren't very recommended
 
 ---
 
@@ -84,14 +85,76 @@
 
 ## Vacuum
 
-- Continue from https://www.postgresql.org/docs/current/sql-vacuum.html
 - `Vacuum` is for garbage collecting and optionally analyzing the database
 - It reclaims storage by reclaiming space from dead tuples
   - dead tuples are tuples which are deleted or obsoleted by an update
-- By deafult, it will process every table and column the current user has permissions to vacuum
+  - the extra space is not given back to OS and kept there for reuse by the table itself
+  - no exclusive locks are obtained but as a result, lesser space is reclaimed
+- By default, it will process every table and column the current user has permissions to vacuum
   - we can specify tables and columns list to restrict this
 - the `Analyze` command is what helps with the analyzing and can collect database statistics
   - `analyze verbose` gives the output on pgAdmin for number of pages, live and dead rows for each table
+  - running this on partitions or inherited tables, doesn't update statistics on parent table, so has to be explicitly run on it
+- Following are some important parameters:
+  - `Full`: Takes longer and exclusively locks the table to reclaim more space from the table
+    - internally, it rewrites the content of the table to a new disk file with no extra space and return the reclaimed space to the OS
+    - it also needs more space to keep old and new at the same time, so should be used sparingly
+  - `Verbose`: Prints a vacuum activity report for each table
+  - `Analyze`: Updates statistics used by planner to determine the most efficient way to execute a query
+  - `Index_cleanup`: Specifies if dead tuples are removed from indices or not
+    - by default, index cleanup is skipped when there are too few dead tuples
+  - `Parallel`: (integer) cleanup of indexes happen using parallel background workers when appropriate
+    - its controlled by config params like `max_parallel_maintenance_workers` and `min_parallel_index_scan_size`
+  - `Skip_database_stats`: specifies that updating database stats must be skipped
+    - updating DB stats takes a long time for DBs with lots of tables
+    - useful when issuing multiple Vacuum commands where by default, all of them will try to do this, whereas only last one should
+    - or after all the actual ones, we can use issue vacuum with `only_database_stats` to only do the update
+  - `Buffer_usage_limit`: can specify how much of shared buffer to use
+    - bigger values will allow vacuum to run faster but may also evict useful pages from buffer
+    - if unspecified, it uses the config param `vacuum_buffer_usage_limit`
+  - parameters ought to be specified in order as sometimes they don't work otherwise
+  - rest are discussed in https://www.postgresql.org/docs/current/sql-vacuum.html
+- Vacuum requires the `MAINTAIN` privilege
+- Vacuum can increase I/O traffic thereby affecting other active sessions
+- The progress of vacuum can be seen in `pg_stat_progress_vacuum` and `pg_stat_progress_cluster` views for normal and full respectively
+
+### Autovacuum
+
+- Vacuum should be run often so that space can be reclaimed and DB statistics updated
+- Generally this should be done without the `FULL` option so that production usage of tables is supported
+- Postgres has an `autovacuum deamon` that can help do this
+  - also supports scheduling dynamically based on DB usage which gets over the problem of a fixed schedule vacuum coinciding with a spike in usage
+  - its working can be configured to some degree using config params (discussed later)
+- In Postgres, transactions rely on a 32bit XID which wraps around to 0 after 4 billion transactions
+  - this can cause catastrophic data loss as past transactions seem to appear in the future
+  - this is another reason to run vacuum often (every 2 billion transactions) to avoid this issue
+  - this is referred to as `freezing` and is controlled by `autovacuum_freeze_max_age` param (default is 200 million)
+  - too high a value for this param may lead to `pg_xact` and `pg_commit` sub-directories to grow in size (upto 20.5GB together for the max of 2 billion)
+    - if that is small compared to overall DB then no problem, but otherwise reduce this value 
+- Sometimes autovacuum may not be able to remove old XIDs
+  - in this case, the DB will throw warnings about it and a manual non-FULL vacuum from a superuser will resolve the issue
+- Following are some params that affect autovacuum operation
+  - `autovacuum_naptime`: specifies how often the deamon launches an autovacuum worker
+    - if there are N databases in an installation, a new worker is launched every (naptime/N)
+  - `autovacuum_max_workers`: specifies the total number of workers allowed to run at the same time
+- Autovacuum doesn't automatically analyze partitioned or inherited tables and that might lead to suboptimal query plans
+  - attempt to run an `analyze` command on those whenever data is first inserted or when there is significant change in its distribution
+- Autovacuum doesn't analyze temporary tables either
+
+---
+
+## Resource consumption
+
+- Memory related
+  - `shared_buffers`: (integer - default 128MB) sets the amount of memort the DB server uses as shared memory buffer
+    - a reasonable starting value is 25% of RAM (more than 40% of RAM is unlikely to work well)
+  - `huge_pages`: (on/off/try) allows using huge pages if possible, directly improves performance
+  - `work_mem`: (integer - default 4MB) sets the amount of RAM to be used by a query operation before writing to temporary disk files
+    - there are multiple operations in a single query and there are multiple queries in a session and multiple sessions on a server
+- Disk
+  - `temp_file_limit`: (integer) specifies the max disk space that a process can use for temporary files (default is no limit)
+- Cost-based vacuum delay [CONTINUE]
+- Other params at https://www.postgresql.org/docs/current/runtime-config-resource.html
 
 ---
 

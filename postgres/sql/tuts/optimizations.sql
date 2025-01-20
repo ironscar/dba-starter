@@ -12,5 +12,4 @@ select* from my_temp_table;
 
 ------------------------------ VACUUM --------------------------------
 
-analyze verbose;
-vacuum;
+vacuum verbose analyze;
