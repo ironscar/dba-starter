@@ -13,3 +13,13 @@ select* from my_temp_table;
 ------------------------------ VACUUM --------------------------------
 
 vacuum verbose analyze;
+
+show autovacuum;
+
+------------------------ PERFORMANCE TIPS -----------------------------
+
+-- return number of disk pages in the specific table and its record count (only select)
+-- explain gives the query plan
+-- analyze gives the actual planning and execution time as well
+-- buffers specifies how I/O intensive is the operation
+explain (analyze, buffers) select relpages, reltuples from pg_class where relname = 'index_trial_tasks';

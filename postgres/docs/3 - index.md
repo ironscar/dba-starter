@@ -6,6 +6,7 @@
   - there is `Explain Plan (F7)` and `Explain Analyze` followed by a dropdown
   - `Explain Plan` is the basic one which gives prediction on number of rows
   - `Explain Analyze` gives more accurate information but also executes your query so use carefully for non-SELECT queries
+  - You can just write `explain` or `explain analyze` before the query and run it with `F5` to get the plan output
   - The dropdown shows additional configurations like how verbose and whether to include costs etc
     - we have to repeat these configs every time we open a new file
 - Select a query in pgAdmin and press `F7`, to see:

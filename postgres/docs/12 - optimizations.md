@@ -140,6 +140,7 @@
 - Autovacuum doesn't automatically analyze partitioned or inherited tables and that might lead to suboptimal query plans
   - attempt to run an `analyze` command on those whenever data is first inserted or when there is significant change in its distribution
 - Autovacuum doesn't analyze temporary tables either
+- By default it is ON, you can see it by `show autovacuum;`
 
 ---
 
@@ -160,6 +161,42 @@
 
 ## Performance tips
 
-- Continue from https://www.postgresql.org/docs/current/performance-tips.html
+### Explain plan additional details
+
+- `Explain Plan` helps in seeing the query plan generated for a query based on current statistics
+  - the cost specified in these plans are in random units but they can be configured by
+    - `seq_page_cost`: cost of sequential disk page fetch defaulted to a value of 2
+    - `random_page_cost`: cost of non-sequential disk page fetch default to a value of 4
+      - normally this is a lot more expensive than four times the sequential fetch but most of these are expected to be in cache
+      - reducing this value leads to preferring index scans and vice versa
+      - if more of your data is cached (like in a smaller DB on a server with more RAM), feel free to reduce this value more
+    - `effective_cache_size`: effective disk size available to a query, defaulted to 4GB
+      - higher value makes it more probable to use an index scan over a sequential scan and vice versa
+  - other params on costs are discussed in https://www.postgresql.org/docs/current/runtime-config-query.html#RUNTIME-CONFIG-QUERY-CONSTANTS
+  - these params are set based on aggregates of all queries in an installation so changing them based on a few experiments is not recommended
+  - `pg_class` view has `relpages` that can specify the number of disk pages in the current table
+    - sequential costs depend on disk page count
+  - `Explain Analyze` will run the actual query and give the millisecond execution time
+    - this cannot be compared to the cost from Explain Plan which is in random units
+  - Statistics from Explain Analyze can be less accurate if gettimeofday() calls are slow for the corresponding OS
+    - this can be tested with the `pg_test_timing` command on terminal
+    - per loop time overhead below 100ns is good enough
+
+### Planner statistics
+
+- Continue from https://www.postgresql.org/docs/current/planner-stats.html
+
+- For more in-depth details, refer to https://www.postgresql.org/docs/current/performance-tips.html
+
+---
+
+## JIT
+
+- Params that affect cost planning with JIT:
+  - `jit`: specifies whether jit is on, default is on
+  - `jit_above_cost`: cost above which JIT is activated, defaulted to 100,000
+  - `jit_inline_above_cost`: cost above which JIT tries to inline functions and operators to improve execution speed at the cost of planning time, defaulted to 500,000
+  - `jit_optimize_above_cost`: cost above which JIT applies more optimizations, usually set between `jit_above_cost` and `jit_inline_above_cost` for best results
+- Continue from https://www.postgresql.org/docs/current/jit.html
 
 ---
