@@ -23,3 +23,7 @@ show autovacuum;
 -- analyze gives the actual planning and execution time as well
 -- buffers specifies how I/O intensive is the operation
 explain (analyze, buffers) select relpages, reltuples from pg_class where relname = 'index_trial_tasks';
+
+-------------------------- JIT ----------------------------------------
+
+select current_setting('jit');

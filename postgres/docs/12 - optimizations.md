@@ -184,7 +184,57 @@
 
 ### Planner statistics
 
-- Continue from https://www.postgresql.org/docs/current/planner-stats.html
+- The query planner looks at various DB statistics to compare costs and choose the plan including:
+  - number of rows in table and index (stored in `pg_class`)
+  - `default_statistics_target`: specifies the number of values `ANALYZE` uses to populate `pg_statistics` (default 100)
+    - increasing this may make for more accurate planner estimates for columns with irregular distributions
+    - this can be set on a per-column basis so can be decreased for columns with less data and simple distributions
+  - normally columns are considered non-correlated but maybe correlated
+    - we can create statistics objects and run `ANALYZE <independent_col>` to get statistics on those for the planner to get better estimates for correlated columns
+    - using the `CREATE STATISTIC <name> (dependencies) ON <dependent_col_list> FROM <independent_col>`
+    - currently only applicable for `=` and `IN` conditions and not others in Postgres
+  - normally statistics are not gathered for groups of columns together resulting in bad estimates for `group by a,b,c`
+    - we can create statistics object like `CREATE STATISTICS <name> (ndistinct) ON <col_list>`
+    - it will get statistics on groups of columns used together (impractical to do for all combination of columns)
+  - normally, statistics of common value lists are not gathered on groups of columns either
+    - we can create statistics object like `CREATE STATISTICS <name> (mcv) ON <col_list>`
+    - advisable to only create for column combinations used in conditions together
+  - we can use the `pg_statistic_ext` and `pg_statistic_ext_data` views to see the statistics for these objects using a superuser
+
+### Explicit Join Clauses
+
+- Using explicit join clauses can sometimes control the planner to take less time
+- This becomes noticeable when joining more than 8 tables
+- We can set the `join_collapse_limit` to do this (generally equal to the `from_collapse_limit`)
+  - takes an integer specifying the number of tables used in join, above which it will convert the joins to from items to reduce planning time
+  - might produce inferior plans
+  - 1 => use the join order explicitly set by the query
+
+### Non-durable settings
+
+- Durability is a feature of recording committed transactions in the event of OS or hardware crash
+- It adds a lot of overhead per transaction so can be eliminated to some degree to run Postgres much faster as follows:
+  - Place database data directory in RAM to eliminate all disk I/O (only possible if all data can be contained in RAM)
+  - Turn off `fsync` which may cause data corruption on server crash by choosing to not write changes to disk
+  - Turn off `synchronous_commit` on less important transactions which makes WALs not write on every commit, but risks data loss on random server crash
+    - there are other values to it that we can set for optimal behavior like `off`, `local`, `remote_write`, `on` & `remote_apply`
+  - Turn off `full_page_writes` which may cause data corruption on server crash
+  - Increase `max_wal_size` and `checkpoint_timeout` which reduces freqency of checkpoints and increases size of pg_wal directory
+  - Create `unlogged` table which makes the table non-crash-safe
+
+### Populating DBs
+
+- When inserting a large amount of data to DB (perhaps when starting the first time), it could take a long time on normal operation
+- For multiple inserts, we can turn off autocommit and do one commit at the end (doing a `begin <sql> commit end` like a proc will allow this)
+- Use `COPY` instead of INSERT for large number of rows as it is optimized for that, though provides lesser flexibility
+  - it moves data from SQL to files or vice versa like `copy table (columns) from file` or `copy query to file`
+  - more details at https://www.postgresql.org/docs/current/sql-copy.html
+  - `pg_dump` by default uses `COPY`
+- Remove indexes and constraints as index-updates and constraint-checks take more time, they can be recreated later
+- Temporarily increasing `maintenance_work_mem` may speed up load operations, but it doesn't affect `COPY`
+- Increasing `max_wal_size` as before to reduce checkpointing
+- Disable WAL archiving and streaming replication and then take a base-backup and re-enable it after load
+- Run `ANALYZE` after load is complete to update statistcs
 
 - For more in-depth details, refer to https://www.postgresql.org/docs/current/performance-tips.html
 
@@ -197,6 +247,15 @@
   - `jit_above_cost`: cost above which JIT is activated, defaulted to 100,000
   - `jit_inline_above_cost`: cost above which JIT tries to inline functions and operators to improve execution speed at the cost of planning time, defaulted to 500,000
   - `jit_optimize_above_cost`: cost above which JIT applies more optimizations, usually set between `jit_above_cost` and `jit_inline_above_cost` for best results
-- Continue from https://www.postgresql.org/docs/current/jit.html
+- JIT involves turning some general purpose code to native code to speed up execution
+  - currently only expression evaluation and tuple deforming (convert a tuple on disk to tuple in RAM) is supported
+  - JIT can also inline functions and operations which are used within evaluations
+    - only internal functions are supported and extension functions are not
+  - Postgres, when built with LLVM, allows certain optimizations
+    - https://llvm.org/docs/Passes.html#transform-passes discusses them
+    - some optimizations are cheap while others are more expensive
+  - By default, it is ON
+  - The plan using Explain, will specify if JIT is being used
+- It is mainly advisable to use for long-running CPU-intensive queries like analytical queries
 
 ---

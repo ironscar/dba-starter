@@ -21,13 +21,14 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 11. DB links & Postgres_fdw [DONE]
     - DB links [DONE]
     - Foreign data wrappers [DONE]
-12. Optimization configurations [NOW]
+12. Optimization configurations [DONE]
     - temporary tables [DONE]
     - parallel query [DONE]
     - genetic query optimizer [DONE]
-    - vacuum [NOW]
-    - others
-13. High availability, failover & replication
+    - vacuum [DONE]
+    - performance tips [DONE]
+    - JIT [DONE]
+13. High availability, failover & replication [NOW]
     - https://www.postgresql.org/docs/16/high-availability.html
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
@@ -41,5 +42,6 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Can we automate upgrades too? 
 17. DB DevOps strategy
     - Secret management and auto-update integration
+    - Testing
 
 ---
