@@ -40,8 +40,8 @@
     - Warm and Hot standby servers can be kept up to date with a stream of WAL records
     - if primary fails, these standby servers can be quickly made primary
     - this can be synchronous or asynchronous, and has to be done for the entire database
-    - Warm standbys can be done by `File-based log shipping` or `Streaming replication` or both
-    - Hot standbys have their own setup
+    - Warm standbys can be done by `File-based log shipping` (skip) or `Streaming replication` (preferred) or both
+    - Hot standbys are just a setting that can either allow read connections or not
   - `Logical Replication`
     - DB server can send stream of data modifications constructed from WAL to another server and also subscribe to changes from another
     - conflict resolution might become necessary as a result
@@ -68,30 +68,11 @@
 - The primary and standby servers must be as similar as possible in terms of hardware and Postgres version
 - The idea is all standbys should be upgraded first (because its more likely to be able to still replicate)
   - switch to one of these as primary if all good and then upgrade the old primary as a standby
-
-### Standby server operation
-
-- standby server enters standby mode if its data directory has a `standby.signal` file
-- In standby mode, server can read WALs from an archive in file shipping or direclty over TCP connection to primary in streaming
-- standby uses the `restore_command` to replay all WAL files from the archive location
-- the failure response is discussed in more detail at https://www.postgresql.org/docs/16/warm-standby.html#STANDBY-SERVER-OPERATION
+- We have to create the `standby.signal` in data directory of standby to put it into standby mode
+- The failure response is discussed in more detail at https://www.postgresql.org/docs/16/warm-standby.html#STANDBY-SERVER-OPERATION
   - but the server will be stuck in a loop of trying to restore from archive and restore from primary until its stopped or promoted
-- standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called
 
-### Preparing standby server
-
-- Take a base backup of primary and set it up on standby
-- Create `standby.signal` file in data directory
-- Set `restore_command` as before to copy files from WAL archive
-- Setup all connections on standby as they are on primary as it will become primary after primary fails
-- We can have any number of standby servers but if using streaming, `max_wal_senders` on primary must be set high enough
-- Postgres recommends to use streaming replication in most scenarios unless the writes to DB are too infrequent
-  - if infrequent, we can use logical replication or do continuous archiving with `scp` or `rsync` in the archive command
-- For streaming replication, we also need to set `primary_conninfo` including the host, port, user and password if required
-- If using WAL archive, size can be minimized using the `archive_cleanup` command to remove files no longer required by the server
-  - we can use the `pg_archivecleanup <pathToArchive> %r` that does this automatically
-
-### File-based WAL shipping
+### File-based WAL shipping [SKIP]
 
 - No streaming, use `scp` or `rsync` on primary and archive WAL files to every standby
   - neither is directly available on the Postgres docker container
@@ -103,30 +84,59 @@
     - we also need to comment out the current nameserver setting as it may lead to things not working out
     - with this, we were able to manually install `rsync` in both servers
   - For rsync to work, we need ssh, which is also not there on these servers, so we have to install that too
+  - Looks like more and more customizations required, while streaming is a lot easier to setup, so use streaming instead
+- Standby uses the `restore_command` to replay all WAL files from the archive location if using file-based log shipping
+- If using WAL archive, size can be minimized using the `archive_cleanup` command to remove files no longer required by the server
+  - we can use the `pg_archivecleanup <pathToArchive> %r` that does this automatically
+- Postgres recommends to use streaming replication in most scenarios unless the writes to DB are too infrequent
+  - if infrequent, we can use logical replication or do continuous archiving with `scp` or `rsync` in the archive command
 
-[TRIAL]
-- Research on what tool to use for failover (ideally something that can work with different kinds of DBs)
-- Try out streaming replication first and see if file-based log shipping is even required
+### Streaming replication [PREFER]
 
-[CONSIDERATIONS]
-- Check what kind of manual setup would be required in the following cases:
-  - postgres containers talk to themselves
-    - need to create custom postgres image from current image with rsync and ssh installed
-    - need to manually generate ssh keys for all standbys and primary and distribute the keys among them
-      - does key need to be only on container or also on host?
-    - if containers are destroyed etc, then reuse the keys generated previously (need to be stored)
-  - some external job routinely copies WAL files from primary to standbys
-    - need to create some sort of scheduled job that will copy the contents from primary archived directory to all standbys
-    - still need ssh keys to be manually generated between these hosts
-  - use streaming replication
-    - if its always easier to setup and avoids all these problems, maybe do that first and skip this entirely
-    - check if streaming is less frequent when writes are less frequent (so regular log shipping is not required at all)
-  - need some way to always tell which server is primary from every other server - even after changes (failover)
-    - apparently `select* from pg_stat_replication;` provides this information once the replication setup is done
-- Also seems like failover is not automatically handled by postgres, and needs external intervention
-  - Patroni, Pgpool-2, Repmgr, pg_auto_failover are some software that help with this (need to compare)
-  - Check whether they can maintain a single connection point for consuming applications in some way and how
+- First, let's sync both DB containers with a base backup from one to another
+- Let us have `postgresdb` as primary and `postgresdb2` as standby
+- Setup all connections on standby as they are on primary as it will become primary after primary fails
+- We can have any number of standby servers but if using streaming, `max_wal_senders` on primary must be set high enough (uncomment in `postgresql.conf`)
+- Let's configure standby with `standby.signal` file (which puts the server in standby mode)
+  - in standby mode, server can read WALs direclty over TCP connection to primary
+- Set `primary_conninfo='host=192.168.196.2 port=5432 user=postgres options=''-c wal_sender_timeout=5000'''`
+  - this is necessary for streaming to be setup
+  - this sets the connection to primary and specifies that replication ought to be stopped if WALs not received in 5 seconds like if a server has crashed
+  - this can take a password as well or the password can be set in the `~/.pgpass` file
+  - restore commands are not required
+- We need to take the basebackup and make all these changes and then restart at once for streaming to work correctly
+  - if `hot_standby=off`, we won't be able to connect to the standby server to check, but default is `on`
+  - but we can query `pg_stat_replication` on primary to see there is a new record showing the streaming
+  - we can also query `pg_stat_wal_receiver` on standby to see the new record
+- Updating data in primary now also automatically gets replicated on the standby
+- To guage types of delays in replication
+  - we can use the `pg_current_wal_lsn()` on primary to check the current WAL
+  - we can use the `pg_last_wal_receive_lsn()` on standby to check the last received WAL
+  - we can check the difference between the two to guage how far behind the standby is
+  - if difference between `pg_current_wal_lsn()` and `pg_stat_replication.sent_lsn` on primary is large => primary is under load
+  - if difference between `pg_last_wal_receive_lsn()` on standby and `pg_stat_replication.sent_lsn` on primary is large => network is slow
+  - if difference between `pg_last_wal_receive_lsn()` and `pg_stat_wal_receiver.flushed_lsn` on standby is large => WALs are coming in faster than can be replayed
+- If we shut down standby for some time, make an update on primary and then restart the standby, it catches up on the updates
+- If we try update statement on standby, it fails with error `cannot execute UPDATE in read-only transaction`
 
-- Continue from https://www.postgresql.org/docs/16/warm-standby.html#STANDBY-SERVER-OPERATION
+### Replication Slots
+
+- Replication slots are a way to make sure that WAL segments aren't removed from primary until it has been received by all standbys
+- It can only retain WALs upto a limit of `max_slot_wal_keep_size`
+- `hot_standby_feedback` is a config param that decides if hot standby will send feedback to primary with respect to rows being removed on primary by vacuum, but only when its connected - whereas replication slots are always valid
+  - both can cause lots of space to be taken up on primary under certain cases
+- Slots can be given a name and seen in the `pg_replication_slots` view
+- We can create new replication slots with `select pg_create_physical_replication_slot('<name>')` on primary
+  - currently we use `standby_1` as the slot for `postgresdb2`
+  - each standby has to connect to a distinct slot at one time => number of standbys = number of replication slots
+- We can set the `primary_slot_name` config param in `postgresql.conf` on standby to use that replication slot
+
+- Continue from https://www.postgresql.org/docs/16/warm-standby.html#CASCADING-REPLICATION
+
+### Failover
+
+- Let us first try to do a manual failover
+  - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called [TRY]
+- Then, research on what tool to use for failover (ideally something that can work with different kinds of DBs)
 
 ---

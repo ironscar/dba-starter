@@ -35,7 +35,9 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://www.postgresql.org/docs/current/runtime-config-replication.html
     - https://www.postgresql.org/docs/current/warm-standby.html
     - https://www.postgresql.org/docs/16/logical-replication.html
+    - Actually connect to a Spring boot app with multiple read replicas etc
 14. Sharding & Citus
+    - 
 15. App integrations for procs & functions
 16. Upgrade to DB versions
     - Try incremental base backups at this point
