@@ -35,15 +35,16 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://www.postgresql.org/docs/current/runtime-config-replication.html
     - https://www.postgresql.org/docs/current/warm-standby.html
     - https://www.postgresql.org/docs/16/logical-replication.html
-    - Actually connect to a Spring boot app with multiple read replicas etc
 14. Sharding & HA Cluster deployments
     - Citus: https://www.citusdata.com/
     - YugabyteDB: https://www.yugabyte.com/yugabytedb/
-16. App integrations for procs & functions
-17. Upgrade to DB versions
+15. App integrations
+    - With sharding and HA setup with failover
+    - For procs/functions
+16. Upgrade to DB versions
     - Try incremental base backups at this point
     - Can we automate upgrades too? 
-18. DB DevOps strategy
+17. DB DevOps strategy
     - Secret management and auto-update integration
     - Testing
 
