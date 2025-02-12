@@ -124,12 +124,23 @@
 - Replication slots are a way to make sure that WAL segments aren't removed from primary until it has been received by all standbys
 - It can only retain WALs upto a limit of `max_slot_wal_keep_size`
 - `hot_standby_feedback` is a config param that decides if hot standby will send feedback to primary with respect to rows being removed on primary by vacuum, but only when its connected - whereas replication slots are always valid
-  - both can cause lots of space to be taken up on primary under certain cases
+- It is generally a better option to set replication slots than trying to do hot_standby_feedback or manual WAL segment persisting
+  - all of the above options imply additional space being used to persist WALs
 - Slots can be given a name and seen in the `pg_replication_slots` view
 - We can create new replication slots with `select pg_create_physical_replication_slot('<name>')` on primary
   - currently we use `standby_1` as the slot for `postgresdb2`
   - each standby has to connect to a distinct slot at one time => number of standbys = number of replication slots
+  - we can drop replication slots by `select pg_drop_replication_slot('<name>')` on primary
 - We can set the `primary_slot_name` config param in `postgresql.conf` on standby to use that replication slot
+
+### Cascading Replications
+
+- We can also cascade replications from one standby to another thus reducing number of connections to primary
+- Cascading replications are asynchronous currently and synchronous settings change nothing for it
+- We need to set the `primary_conninfo` on the downstream standby to point to the upstream standby
+- We also need to make sure `pg_hba.conf` has the entries to connect accordingly
+
+- Even a regular base-backup is not working [CHECK-WHY]
 
 - Continue from https://www.postgresql.org/docs/16/warm-standby.html#CASCADING-REPLICATION
 
