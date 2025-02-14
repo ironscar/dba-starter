@@ -102,6 +102,7 @@
 - Set `primary_conninfo='host=192.168.196.2 port=5432 user=postgres options=''-c wal_sender_timeout=5000'''`
   - this is necessary for streaming to be setup
   - this sets the connection to primary and specifies that replication ought to be stopped if WALs not received in 5 seconds like if a server has crashed
+    - there is a config with the same name which defaults to 1 minute
   - this can take a password as well or the password can be set in the `~/.pgpass` file
   - restore commands are not required
 - We need to take the basebackup and make all these changes and then restart at once for streaming to work correctly
@@ -118,6 +119,8 @@
   - if difference between `pg_last_wal_receive_lsn()` and `pg_stat_wal_receiver.flushed_lsn` on standby is large => WALs are coming in faster than can be replayed
 - If we shut down standby for some time, make an update on primary and then restart the standby, it catches up on the updates
 - If we try update statement on standby, it fails with error `cannot execute UPDATE in read-only transaction`
+- Even if no writes are happening on primary, messages are regularly sent between primary and secondary over network
+  - we can check this on the `pg_stat_wal_receiver.last_msg_send_time` column over multiple times
 
 ### Replication Slots
 
@@ -137,14 +140,60 @@
 
 - We can also cascade replications from one standby to another thus reducing number of connections to primary
 - Cascading replications are asynchronous currently and synchronous settings change nothing for it
-- We need to set the `primary_conninfo` on the downstream standby to point to the upstream standby
-- We also need to make sure `pg_hba.conf` has the entries to connect accordingly
+- The steps are as follows:
+  - we take a basebackup of primary (make sure to keep `root` as owner and not reassign ownership to `postgres`)
+  - we create `standby.signal` inside basebackup
+  - we need to set the `primary_conninfo` on the downstream standby to point to the upstream standby
+  - we also need to make sure `pg_hba.conf` has the entries to connect accordingly
+  - then restart the server
+- We can also directly take basebackup of upstream standby, thereby skipping the creation of `standby.signal`
+  - we still have to do the other steps
+  - the benefit is that there is lesser load on the primary
+  - the cons are as follows:
+    - standby doesn't switch to new WAL during backup so backups may take long time for the last WAL (can manually run `pg_switch_wal()` on standby)
+    - if standby is promoted to primary during backup, backup fails
+- At this point, there will be a new entry in `pg_stat_replication` of upstream standby pointing to downstream standby
+  - making an update on primary flows down to upstream standby and then to downstream even though primary `pg_hba.conf` doesn't have entries for downstream standby 
 
-- Continue from https://www.postgresql.org/docs/16/warm-standby.html#CASCADING-REPLICATION
+### Synchronous Replication
+
+- Streaming is asynchronous by default, which can cause data loss if primary crashes before changes have been replicated to standby
+- We can set streaming to synchronous to avoid this data loss, which is only supported by immediate standbys from main primary
+- To enable this
+  - set `synchronous_commit=on` on primary (default so no changes required)
+    - we can also set this to `remote_write` which is less durable as it doesn't flush to disk on standby
+    - but this returns faster than `on` which waits for flushing
+    - good to consider as data loss here only happens if both primary and standby fail at same time which is very rare
+  - set `synchronous_standby_names` on primary to specify a list of standbys to do synchronous commit on
+    - the standby name can be specified as `application_name` in the `primary_conninfo` specified
+    - if not specified, the `cluster_name` of standby is used (by default this is empty)
+    - we go ahead and assign cluster names to each container and restart them
+  - these application names will show up automatically in the `pg_stat_replication` view, and `sync_state` will show `sync`
+- The standby names on primary also have some handy methods
+  - `FIRST <num> (<name1>, ...)` can specify the first N in a list of standbys to replicate synchronously to
+    - only the first N will be synchronous and the rest will be async
+    - if one of the first N fail, then first N unfailed onces become sync and rest are async automatically
+  - `ANY <num> (<name1>, ...)` can specify any N of standbys to be synchronous
+    - so if `num = 2` and commit is received from 2 servers, the rest will be async
+    -  helps in faster commits as you only wait for the first two
+
+### Planning for Performance & HA
+
+- Synchronous replication affects performance especially with servers which are distant in the network
+- Network bandwidth must also be higher than the rate of generation of WAL data across the entire HA setup
+- If a synchronous standby crashes during a transaction commit, primary will keep waiting and never complete transactions
+  - thus, we should have some synchronous and some async standbys using `ANY` (or `FIRST` if we know geographical details)
 
 ### Failover
 
+- Continue from https://www.postgresql.org/docs/16/warm-standby-failover.html
 - Let us first try to do a manual failover
+  - during time of writing, setup is as follows:
+    - `postgresdb` = `primary`
+    - `postgresdb2` = `standby_1` --> `primary`
+    - `postgresdb3` = `cascade_standby_1` --> `standby_1`
+    - `postgresdb4` = `standby2` ==> `primary`
+    - Here `-->` implies async streaming and `==>` implies sync streaming
   - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called [TRY]
 - Then, research on what tool to use for failover (ideally something that can work with different kinds of DBs)
 

@@ -7,7 +7,7 @@ select* from pg_stat_replication;
 select* from current_setting('hot_standby');
 
 -- update data
-update student set first_name = 'Iron4' where id = 1;
+update student set first_name = 'Iron3' where id = 1;
 
 -- changes are replicated successfully on standby
 select* from student;
@@ -27,10 +27,14 @@ select pg_is_in_recovery();
 -- max wal senders on primary
 select current_setting('max_wal_senders');
 
--- create replication slot on primary
+-- create replication slots on primary
 select pg_create_physical_replication_slot('standby_1');
+select pg_create_physical_replication_slot('standby_2');
 
 -- replication slots on primary
 select* from pg_replication_slots;
+
+-- get cluster name
+select current_setting('cluster_name');
 
 ----------------------------- LOGICAL REPLICATION ---------------------------

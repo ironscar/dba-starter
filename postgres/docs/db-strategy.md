@@ -38,7 +38,7 @@
       - have this weird concept of using `/` and `@@` which aren't standard SQL
       - currently works with a single instance of a vertically scaled machine which is a SPOF (single point of failure)
         - could create separate repositories for each instance
-  - Can look at Liquibase (which TI is considering)
+  - Can look at Liquibase (which TI was considering but isn't any longer due to license issues)
   - Some links at https://jirasoulrupture.atlassian.net/wiki/spaces/~557058ba5230b20e9f4beaacdf07e9cbe66191/pages/667811841/Nov+2024#DB-Version-control
 
 ---
