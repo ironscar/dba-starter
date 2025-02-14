@@ -153,6 +153,7 @@
   - So `cp -r /root/basebackup /var/lib/postgresql/data` to copy all contents of `basebackup` dir into `data` dir
   - Then in `data` dir, rename the `pgdata` dir to `pgdata_ini` by `mv pgdata pgdata_ini`
   - Also rename `basebackup` dir to `pgdata` using `mv basebackup pgdata`
+  - Make sure not to use `chown` on `basebackup` to make its owner as `postgres`, because the DB recovery fails
   - Finally, we have to restart the container for changes to take effect
 - This, like `pg_dumpall` copies even the password to be same even if it were different before
 - For some cleanup

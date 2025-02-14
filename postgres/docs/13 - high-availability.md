@@ -140,8 +140,6 @@
 - We need to set the `primary_conninfo` on the downstream standby to point to the upstream standby
 - We also need to make sure `pg_hba.conf` has the entries to connect accordingly
 
-- Even a regular base-backup is not working [CHECK-WHY]
-
 - Continue from https://www.postgresql.org/docs/16/warm-standby.html#CASCADING-REPLICATION
 
 ### Failover
