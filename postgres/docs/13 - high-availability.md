@@ -184,6 +184,8 @@
 - If a synchronous standby crashes during a transaction commit, primary will keep waiting and never complete transactions
   - thus, we should have some synchronous and some async standbys using `ANY` (or `FIRST` if we know geographical details)
 
+- Set ANY 1 (standby_1, standby_2) and see if stopping standby_1 automatically makes standby_2 as sync [TRY] 
+
 ### Failover
 
 - Continue from https://www.postgresql.org/docs/16/warm-standby-failover.html
