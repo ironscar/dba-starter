@@ -46,7 +46,9 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Try incremental base backups at this point
     - Can we automate upgrades too? 
 17. DB DevOps strategy
-    - Secret management and auto-update integration
+    - Secret management
+    - Password rotation
+    - Auto-update integration
     - Testing
 
 ---
