@@ -175,7 +175,7 @@
     - if one of the first N fail, then first N unfailed onces become sync and rest are async automatically
   - `ANY <num> (<name1>, ...)` can specify any N of standbys to be synchronous
     - so if `num = 2` and commit is received from 2 servers, the rest will be async
-    -  helps in faster commits as you only wait for the first two
+    - helps in faster commits as you only wait for the first two that acknowledge
 
 ### Planning for Performance & HA
 
@@ -184,19 +184,45 @@
 - If a synchronous standby crashes during a transaction commit, primary will keep waiting and never complete transactions
   - thus, we should have some synchronous and some async standbys using `ANY` (or `FIRST` if we know geographical details)
 
-- Set ANY 1 (standby_1, standby_2) and see if stopping standby_1 automatically makes standby_2 as sync [TRY] 
+- Set `'ANY 1 (standby_1, standby_2)'` and see if stopping standby_1 automatically makes standby_2 as sync
+  - when we do this, the `pg_stat_replication` table on primary specifies `sync_state` as `quorum`
 
-### Failover
+### Failover strategy
 
-- Continue from https://www.postgresql.org/docs/16/warm-standby-failover.html
 - Let us first try to do a manual failover
   - during time of writing, setup is as follows:
     - `postgresdb` = `primary`
-    - `postgresdb2` = `standby_1` --> `primary`
-    - `postgresdb3` = `cascade_standby_1` --> `standby_1`
-    - `postgresdb4` = `standby2` ==> `primary`
-    - Here `-->` implies async streaming and `==>` implies sync streaming
+    - `postgresdb2` = `standby_1` <=- `primary`
+    - `postgresdb3` = `cascade_standby_1` <-- `standby_1`
+    - `postgresdb4` = `standby2` <=- `primary`
+    - Here `<--` implies async streaming and `<=-` implies quorum-based sync streaming
   - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called [TRY]
-- Then, research on what tool to use for failover (ideally something that can work with different kinds of DBs)
+    - update standby names on each server such that it doesn't need restart if it becomes primary
+    - update cluster names as during failover, a standby will become primary and the naming will be confusing
+    - maybe need to setup replication slots ahead of time as well as part of database initialization [CHECK]
+    - shut down primary
+    - run `select pg_promote();` on standby1
+      - interim state of new system should be as follows:
+        - `postgresdb` = `primary` [DOWN]
+        - `postgresdb2` = `standby_1` [PRIMARY]
+        - `postgresdb3` = `cascade_standby_1` <=- `standby_1`
+        - `postgresdb4` = `standby_2` <=- `standby_1`
+    - run some update query on new primary and confirm replication to other standbys
+    - restart primary as new standby
+      - final state of system should be as follows:
+        - `postgresdb` = `primary` <-- `standby_2` [CASCADED_STANDBY]
+        - `postgresdb2` = `standby_1` [PRIMARY]
+        - `postgresdb3` = `cascade_standby_1` <=- `standby_1`
+        - `postgresdb4` = `standby_2` <=- `standby_1`
+    - the logic at each failover here is as follows:
+      - when primary goes down, standby1 will become new primary
+      - cascading_standby will become standby2 and standby2  will become standby1
+      - when old primary comes back online, it will become cascading_standby
+      - check if this is even possible without restarting the running databases
+- Patroni can handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
+
+### Hot Standby
+
+- Continue from https://www.postgresql.org/docs/16/hot-standby.html
 
 ---

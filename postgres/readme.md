@@ -33,10 +33,10 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
     - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
     - https://www.postgresql.org/docs/current/runtime-config-replication.html
-    - https://www.postgresql.org/docs/current/warm-standby.html
     - https://www.postgresql.org/docs/16/logical-replication.html
 14. Sharding & HA Cluster deployments
-    - Citus: https://www.citusdata.com/
+    - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
+    - Citus: https://www.citusdata.com/ (for sharding)
     - YugabyteDB: https://www.yugabyte.com/yugabytedb/
 15. App integrations
     - With sharding and HA setup with failover
