@@ -38,6 +38,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
     - Citus: https://www.citusdata.com/ (for sharding)
     - YugabyteDB: https://www.yugabyte.com/yugabytedb/
+    - Distributed Multi-master HA and failover: (https://www.yugabyte.com/postgresql/distributed-postgresql/)
 15. App integrations
     - With sharding and HA setup with failover
     - For procs/functions
