@@ -34,7 +34,19 @@ select pg_create_physical_replication_slot('standby_2');
 -- replication slots on primary
 select* from pg_replication_slots;
 
--- get cluster name
-select current_setting('cluster_name');
+-- get cluster name and standby/primary connection details
+select 
+	current_setting('cluster_name') cluster_name,
+	CASE
+		WHEN pg_is_in_recovery() = false THEN null
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.5%' THEN 'pgdb4'
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.4%' THEN 'pgdb3'
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.3%' THEN 'pgdb2'
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.2%' THEN 'pgdb1'
+	END primary_conninfo, 
+	CASE
+		WHEN pg_is_in_recovery() = true THEN null
+		ELSE current_setting('synchronous_standby_names')
+	END synchronous_standby_names;
 
 ----------------------------- LOGICAL REPLICATION ---------------------------

@@ -184,42 +184,98 @@
 - If a synchronous standby crashes during a transaction commit, primary will keep waiting and never complete transactions
   - thus, we should have some synchronous and some async standbys using `ANY` (or `FIRST` if we know geographical details)
 
-- Set `'ANY 1 (standby_1, standby_2)'` and see if stopping standby_1 automatically makes standby_2 as sync
+- Set `'ANY 1 (pgdb2, pgdb4)'` and see if stopping standby_1 automatically makes standby_2 as sync
   - when we do this, the `pg_stat_replication` table on primary specifies `sync_state` as `quorum`
 
-### Failover strategy
+### Failover strategy for Streaming replication
 
 - Let us first try to do a manual failover
-  - during time of writing, setup is as follows:
-    - `postgresdb` = `primary`
-    - `postgresdb2` = `standby_1` <=- `primary`
-    - `postgresdb3` = `cascade_standby_1` <-- `standby_1`
-    - `postgresdb4` = `standby2` <=- `primary`
+    - `postgresdb` = `pgdb1`
+    - `postgresdb2` = `pgdb2` <=- `pgdb1`
+    - `postgresdb3` = `pgdb3` <-- `pgdb2`
+    - `postgresdb4` = `pgdb4` <=- `pgdb1`
     - Here `<--` implies async streaming and `<=-` implies quorum-based sync streaming
   - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called [TRY]
     - update standby names on each server such that it doesn't need restart if it becomes primary
     - update cluster names as during failover, a standby will become primary and the naming will be confusing
-    - maybe need to setup replication slots ahead of time as well as part of database initialization [CHECK]
     - shut down primary
     - run `select pg_promote();` on standby1
       - interim state of new system should be as follows:
-        - `postgresdb` = `primary` [DOWN]
-        - `postgresdb2` = `standby_1` [PRIMARY]
-        - `postgresdb3` = `cascade_standby_1` <=- `standby_1`
-        - `postgresdb4` = `standby_2` <=- `standby_1`
+        - `pgdb1` [DOWN]
+        - `pgdb2` [PRIMARY]
+        - `pgdb3` <=- `pgdb2`
+        - `pgdb4` <=- `pgdb2`
     - run some update query on new primary and confirm replication to other standbys
     - restart primary as new standby
       - final state of system should be as follows:
-        - `postgresdb` = `primary` <-- `standby_2` [CASCADED_STANDBY]
-        - `postgresdb2` = `standby_1` [PRIMARY]
-        - `postgresdb3` = `cascade_standby_1` <=- `standby_1`
-        - `postgresdb4` = `standby_2` <=- `standby_1`
+        - `pgdb1` <-- `pgdb4` [CASCADED_STANDBY]
+        - `pgdb2` [PRIMARY]
+        - `pgdb3` <=- `pgdb2`
+        - `pgdb4` <=- `pgdb2`
+      - final state after `pgdb2` primary fails is:
+        - `pgdb1` <=- `pgdb4`
+        - `pgdb2` <-- `pgdb3` [CASCADED_STANDBY]
+        - `pgdb3` <=- `pgdb4`
+        - `pgdb4` [PRIMARY]
+      - final state after `pgdb4` primary fails is:
+        - `pgdb1` <=- `pgdb3`
+        - `pgdb2` <=- `pgdb3`
+        - `pgdb3` [PRIMARY]
+        - `pgdb4` <-- `pgdb1` [CASCADED_STANDBY]
+      - final state after `pgdb3` primary fails is (similar to inital config):
+        - `pgdb1` [PRIMARY]
+        - `pgdb2` <=- `pgdb1`
+        - `pgdb3` <-- `pgdb2` [CASCADED_STANDBY]
+        - `pgdb4` <=- `pgdb1` 
     - the logic at each failover here is as follows:
       - when primary goes down, standby1 will become new primary
       - cascading_standby will become standby2 and standby2  will become standby1
       - when old primary comes back online, it will become cascading_standby
-      - check if this is even possible without restarting the running databases
-- Patroni can handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
+      - if a non-primary fails, we just try to restart it as is
+
+- Here are the steps we are following:
+  - we updated the names in file of all the DBs in the following order (but didn't restart yet)
+    - `postgresdb3` -> `pgdb3`
+    - `postgresdb4` -> `pgdb4`
+    - `postgresdb2` -> `pgdb2`
+    - `postgresdb` -> `pgdb1`
+  - then we restarted all the servers in that order (ideally we set the names like this from the start)
+    - interestingly we had to restart `pgAdmin` for the updates to show up in `pg_stat_replication`
+  - then we need to update the connections such that they can remain relevant across failover and normal ops
+    - first we go to `pgdb1`
+      - then we updated the `primary_conninfo` on `pgdb1` to point to `pgdb4` which will be ignored while its primary but after failover it will point to that
+      - once `pgdb1` fail happens and it comes back as standby, its `synchronous_standby_names` will be ignored as that config is only relevant on a primary
+    - next we go to `pgdb2`
+      - its `primary_conninfo` can remain unchanged as it will be ignored when it becomes primary after failover
+      - we will update the `synchronous_standby_names` to be `ANY 1 (pgdb3,pgdb4)` which will only become viable once it becomes primary after failover
+      - just need to run `pg_promote` function when primary fails - which is currently MANUAL but ideally needs to be automated
+    - next we go to `pgdb4`
+      - its `primary_conninfo` points to primary as `pgdb1` currently and we will need to update it to point to `pgdb2` after failover - this is MANUAL but since its still a standby (this is permissible)
+      - its `synchronous_standby_names` needs to be `ANY 1 (pgdb1,pgdb3)` which will come into play once it becomes primary
+    - finally we go to `pgdb3`
+      - its `primary_conninfo` points to primary as `pgdb2` which is fine as post-failover it will continue to point to that itself
+      - its `synchronous_standby_names` needs to be `ANY 1 (pgdb1,pgdb2)` which will come into play once it becomes primary
+  - we will go ahead and restart again in same order as before and then restart pgadmin too for safe measure
+  - we can refer to the `get cluster name and standby/primary connection details` query in the SQL file
+  - next steps are to actually simulate a fail and then failover [TODO]
+    - stop pgdb1
+    - run promote on pgdb2 (do we need to restart pgAdmin here?)
+    - do some query updates on pgdb2 and check if they are replicated to pgdb3 synchronously now
+    - update `primary_conninfo` on pgdb4 and restart it
+    - do some query updates on pgdb2 and check if they are replicated to both pgdb3 and pgdb4 in quorum
+    - restart pgdb1 and update it to standby by creating `standby.signal` and see if it works directly
+      - else create new container by taking basebackup of pgdb4 and call it pgdb1
+      - (do we need to restart pgAdmin here?)
+    - do some query updates on pgdb2 and check if pgdb1 is getting updates from pgdb4
+    - check if you can issue writes on anything other than pgdb2
+    - if all works, manual failover process is complete
+  - following steps were manual
+    - running manual promote
+    - update `primary_conninfo` of standby2 to new primary
+    - restart primary as standby
+
+- Check if we need to setup replication slots as part of database initialization [CHECK]
+- Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
 
 ### Hot Standby
 

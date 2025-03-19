@@ -27,3 +27,27 @@ This markdown contains the notes from the book of the same name
 - Little's law specifies that `No: of DB requests (concurrency) = DB throughput * latency`
 - It's important to have monitoring on internal data processes as well
 - ACID transactions add to read/write overhead leading to infrastructure overhead
+
+## CHAPTER 3
+
+- This chapter discusses hadware considerations
+- CPU
+  - multicore with minimal resource sharing is better
+- Memory/RAM
+  - memory allocation & cache control
+- I/O & Disk
+  - types of read/write operations
+  - read/write operations and hroughput determine disk quality
+- Network
+  - DPDK & IRQ binding
+- Most of this doesn't seem fairly low-level and not directly relevant yet but maybe down the line
+
+## CHAPTER 4
+
+- This chapter discusses algorithmic optimizations used in DBs
+- It mostly discusses B-trees and related details
+- Knowing the tradeoffs of the underlying data structures of the DB can help in optimizing your workloads for it
+
+## CHAPTER 5
+
+- This chapter discusses database drivers
