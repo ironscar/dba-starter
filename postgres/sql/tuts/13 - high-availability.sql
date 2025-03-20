@@ -15,10 +15,10 @@ select* from student;
 -- find the WAL reciever record on standby
 select* from pg_stat_wal_receiver;
 
--- current WAL on primary (0/3F0003B8)
+-- current WAL on primary (0/57002740)
 select* from pg_current_wal_lsn();
 
--- last WAL received on standby (0/3F0003B8)
+-- last WAL received on standby (0/57002740)
 select* from pg_last_wal_receive_lsn();
 
 -- check if server is primary (false) or standby (true)
@@ -49,4 +49,24 @@ select
 		ELSE current_setting('synchronous_standby_names')
 	END synchronous_standby_names;
 
------------------------------ LOGICAL REPLICATION ---------------------------
+----------------------------- FAILOVER TRIAL ---------------------------
+
+select current_setting('primary_conninfo');
+
+select* from student;
+
+update student set first_name = 'Iron4' where id = 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+

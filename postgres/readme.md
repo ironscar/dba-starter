@@ -31,7 +31,6 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 13. High availability, failover & replication [NOW]
     - https://www.postgresql.org/docs/16/high-availability.html [NOW]
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
-    - https://www.enterprisedb.com/postgres-tutorials/postgresql-replication-and-automatic-failover-tutorial
     - https://www.postgresql.org/docs/current/runtime-config-replication.html
     - https://www.postgresql.org/docs/16/logical-replication.html
 14. Sharding & HA Cluster deployments

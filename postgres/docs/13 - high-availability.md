@@ -93,6 +93,8 @@
 
 ### Streaming replication [PREFER]
 
+- The following cannot be replicated: Views, Materialized Views, Partition Root Tables, or Foreign Tables, Large Objects and Sequences
+- Postgres logical replication is restricted to DML operations only, with no support for DDL or truncate
 - First, let's sync both DB containers with a base backup from one to another
 - Let us have `postgresdb` as primary and `postgresdb2` as standby
 - Setup all connections on standby as they are on primary as it will become primary after primary fails
@@ -210,23 +212,23 @@
       - final state of system should be as follows:
         - `pgdb1` <-- `pgdb4` [CASCADED_STANDBY]
         - `pgdb2` [PRIMARY]
-        - `pgdb3` <=- `pgdb2`
-        - `pgdb4` <=- `pgdb2`
+        - `pgdb3` <=- `pgdb2` [standby2]
+        - `pgdb4` <=- `pgdb2` [standby1]
       - final state after `pgdb2` primary fails is:
-        - `pgdb1` <=- `pgdb4`
+        - `pgdb1` <=- `pgdb4` [standby2]
         - `pgdb2` <-- `pgdb3` [CASCADED_STANDBY]
-        - `pgdb3` <=- `pgdb4`
+        - `pgdb3` <=- `pgdb4` [standby1]
         - `pgdb4` [PRIMARY]
       - final state after `pgdb4` primary fails is:
-        - `pgdb1` <=- `pgdb3`
-        - `pgdb2` <=- `pgdb3`
+        - `pgdb1` <=- `pgdb3` [standby1]
+        - `pgdb2` <=- `pgdb3` [standby2]
         - `pgdb3` [PRIMARY]
         - `pgdb4` <-- `pgdb1` [CASCADED_STANDBY]
       - final state after `pgdb3` primary fails is (similar to inital config):
         - `pgdb1` [PRIMARY]
-        - `pgdb2` <=- `pgdb1`
+        - `pgdb2` <=- `pgdb1` [standby1]
         - `pgdb3` <-- `pgdb2` [CASCADED_STANDBY]
-        - `pgdb4` <=- `pgdb1` 
+        - `pgdb4` <=- `pgdb1` [standby2]
     - the logic at each failover here is as follows:
       - when primary goes down, standby1 will become new primary
       - cascading_standby will become standby2 and standby2  will become standby1
@@ -257,17 +259,26 @@
       - its `synchronous_standby_names` needs to be `ANY 1 (pgdb1,pgdb2)` which will come into play once it becomes primary
   - we will go ahead and restart again in same order as before and then restart pgadmin too for safe measure
   - we can refer to the `get cluster name and standby/primary connection details` query in the SQL file
-  - next steps are to actually simulate a fail and then failover [TODO]
+  - next steps are to actually simulate a fail and then failover
     - stop pgdb1
-    - run promote on pgdb2 (do we need to restart pgAdmin here?)
+      - currently row = `Iron3, Scar3`
+    - run promote on pgdb2
+      - at this point, `standby.signal` is removed from pgdb2 data directory
     - do some query updates on pgdb2 and check if they are replicated to pgdb3 synchronously now
+      - currently row = `Iron3, Scar` on pgdb2,pgdb3
     - update `primary_conninfo` on pgdb4 and restart it
+      - we also need to comment the `primary_slot_name` since it doesn't exist on pgdb2 though ideally we should create them on all the servers
+      - after restart, pgdb4 catches up to currently row = `Iron3, Scar`
     - do some query updates on pgdb2 and check if they are replicated to both pgdb3 and pgdb4 in quorum
-    - restart pgdb1 and update it to standby by creating `standby.signal` and see if it works directly
-      - else create new container by taking basebackup of pgdb4 and call it pgdb1
-      - (do we need to restart pgAdmin here?)
+      - currently row = `Iron4, Scar` on pgdb2, pgdb3, pgdb4
+    - restart pgdb1 and update it to standby by creating `standby.signal` and see if it works directly [TODO]
+      - when we restart pgdb1, ideally it shouldn't be accessible from any apps as it will initially still think its master and we don't want any WAL conflicts due to writes on it at this point
+      - when these containers are restarted, their IPs also change
+        - thus pgdb1 became `192.168.196.105` and pgdb4 became `192.168.196.102`, so we need to keep that in mind when we set the primary conf atleast for local tests
+      - pgdb1 is not getting any updates from anywhere [DEBUG]
+        - the WALs could not be replayed directly due to timeline forking so we can try `pg_rewind` [TRY]
+      - if it doesn't work directly, create new container by taking basebackup of pgdb4 and call it pgdb1
     - do some query updates on pgdb2 and check if pgdb1 is getting updates from pgdb4
-    - check if you can issue writes on anything other than pgdb2
     - if all works, manual failover process is complete
   - following steps were manual
     - running manual promote
@@ -275,6 +286,7 @@
     - restart primary as standby
 
 - Check if we need to setup replication slots as part of database initialization [CHECK]
+  - Yes this is required as replication won't work if a slot is specified on standby and doesn't exist on primary
 - Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
 
 ### Hot Standby
