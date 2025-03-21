@@ -39,15 +39,18 @@ select
 	current_setting('cluster_name') cluster_name,
 	CASE
 		WHEN pg_is_in_recovery() = false THEN null
-		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.5%' THEN 'pgdb4'
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.2%' THEN 'pgdb4'
 		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.4%' THEN 'pgdb3'
 		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.3%' THEN 'pgdb2'
-		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.2%' THEN 'pgdb1'
+		WHEN current_setting('primary_conninfo') LIKE '%192.168.196.5%' THEN 'pgdb1'
 	END primary_conninfo, 
 	CASE
 		WHEN pg_is_in_recovery() = true THEN null
 		ELSE current_setting('synchronous_standby_names')
 	END synchronous_standby_names;
+
+-- max streaming delay
+select current_Setting('max_standby_streaming_delay');
 
 ----------------------------- FAILOVER TRIAL ---------------------------
 
@@ -55,18 +58,5 @@ select current_setting('primary_conninfo');
 
 select* from student;
 
-update student set first_name = 'Iron4' where id = 1;
-
-
-
-
-
-
-
-
-
-
-
-
-
+update student set first_name = 'Iron' where id = 1;
 

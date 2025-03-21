@@ -1,4 +1,4 @@
-# High availability, Failover & Sharding
+# Streaming replication & Failover
 
 ## Introduction
 
@@ -271,26 +271,59 @@
       - after restart, pgdb4 catches up to currently row = `Iron3, Scar`
     - do some query updates on pgdb2 and check if they are replicated to both pgdb3 and pgdb4 in quorum
       - currently row = `Iron4, Scar` on pgdb2, pgdb3, pgdb4
-    - restart pgdb1 and update it to standby by creating `standby.signal` and see if it works directly [TODO]
-      - when we restart pgdb1, ideally it shouldn't be accessible from any apps as it will initially still think its master and we don't want any WAL conflicts due to writes on it at this point
-      - when these containers are restarted, their IPs also change
-        - thus pgdb1 became `192.168.196.105` and pgdb4 became `192.168.196.102`, so we need to keep that in mind when we set the primary conf atleast for local tests
-      - pgdb1 is not getting any updates from anywhere [DEBUG]
-        - the WALs could not be replayed directly due to timeline forking so we can try `pg_rewind` [TRY]
+    - restart pgdb1 and update it to standby by creating `standby.signal` and see if it works directly
       - if it doesn't work directly, create new container by taking basebackup of pgdb4 and call it pgdb1
     - do some query updates on pgdb2 and check if pgdb1 is getting updates from pgdb4
-    - if all works, manual failover process is complete
+      - had to take basebackup of pgdb4 for new pgdb1 as normal restart of container didn't work, but after that, new row = `Iron4, Scar` on all
+    - thus, manual failover process is complete
   - following steps were manual
     - running manual promote
     - update `primary_conninfo` of standby2 to new primary
-    - restart primary as standby
+    - restart/reinitialize primary as standby
 
-- Check if we need to setup replication slots as part of database initialization [CHECK]
-  - Yes this is required as replication won't work if a slot is specified on standby and doesn't exist on primary
-- Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
+- We need to setup replication slots as part of every database initialization
+  - this is required as replication won't work if a slot is specified on standby and doesn't exist on primary
+
+---
 
 ### Hot Standby
 
-- Continue from https://www.postgresql.org/docs/16/hot-standby.html
+- Hot standbys allow readonly queries on standby servers
+  - there is a latency to replication from primary to standby and hence its eventually consistent
+- If there is a large data load on primary, a similarly heavy load will be on standby via WALs
+  - thus read queries on standby will then content for resources with the replication process
+- When there are conflicts between primary and standby like dropping a table on primary while standby is being queried from that table
+  - we can use params `max_standby_archive_delay` and `max_standby_streaming_delay` to define max allowed delay in applying the WALs in archive-recovery and streaming mode respectively
+  - Query on standby will be cancelled if it takes longer than these delays
+  - Bigger delays could reduce conflicts but would also increase eventual consistency time
+- `Vacuum` could also lead to conflicts as rows which vacuum gets rid of on primary may still be visible on standby
+  - Vacuum doesn't specifically doesnt run on standby since WALs from primary vacuum runs get sent
+- `pg_stat_database_conflicts` view on standby server can show what queries got cancelled and why
+- Certain shared memory structures are controlled by parameters like `max_connections`, `max_prepared_transactions` etc
+  - ideally keep these parameters equal on primary and all standbys but if it has to increase, increase on standby first to avoid standby downtime
+- It is possible to do writes over DBLINK even for a hot-standby
+- Serializable isolation level of transactions are not available on hot standby yet
+- More details at https://www.postgresql.org/docs/16/hot-standby.html
+
+---
+
+### PG_REWIND [TODO]
+
+- when we restart pgdb1, ideally it shouldn't be accessible from any apps as it will initially still think its master and we don't want any WAL conflicts due to writes on it at this point
+- when these containers are restarted, their IPs also change
+- thus pgdb1 became `192.168.196.105` and pgdb4 became `192.168.196.102`, so we need to keep that in mind when we set the primary conf atleast for local tests
+- on each proper restart of system, all containers change their IPs so each time we have to update the connection details, or restart the containers in the order in which you need their IPs [ONLY-LOCAL]
+
+- Now, pgdb1 is not getting any updates from anywhere even after restart
+  - this happens as the WALs could not be replayed directly due to timeline forking so we can try `pg_rewind` because its faster than a complete basebackup
+  - syntax is like `pg_rewind --target-pgdata=/var/lib/postgresql/data/pgdata --source-server='host=192.168.196.2 port=5680 user=postgres'`
+
+- Now we'll simulate failover of pgdb2 and promote pgdb4, then attempt to restart pgdb2 with pg_rewind [TRY]
+
+---
+
+### Conclusion
+
+Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
 
 ---
