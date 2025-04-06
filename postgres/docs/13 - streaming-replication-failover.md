@@ -197,7 +197,7 @@
     - `postgresdb3` = `pgdb3` <-- `pgdb2`
     - `postgresdb4` = `pgdb4` <=- `pgdb1`
     - Here `<--` implies async streaming and `<=-` implies quorum-based sync streaming
-  - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called [TRY]
+  - standby mode is exited when `pg_ctl promote` is run or `pg_promote()` is called
     - update standby names on each server such that it doesn't need restart if it becomes primary
     - update cluster names as during failover, a standby will become primary and the naming will be confusing
     - shut down primary
@@ -231,7 +231,7 @@
         - `pgdb4` <=- `pgdb1` [standby2]
     - the logic at each failover here is as follows:
       - when primary goes down, standby1 will become new primary
-      - cascading_standby will become standby2 and standby2  will become standby1
+      - cascading_standby will become standby2 and standby2 will become standby1
       - when old primary comes back online, it will become cascading_standby
       - if a non-primary fails, we just try to restart it as is
 
@@ -325,5 +325,6 @@
 ### Conclusion
 
 Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
+- HA setups are also discussed in detail at https://www.yugabyte.com/postgresql/postgresql-high-availability/#high-availability-with-multi-master-deployments-with-coordinator
 
 ---
