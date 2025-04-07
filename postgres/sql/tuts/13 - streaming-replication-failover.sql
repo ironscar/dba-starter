@@ -55,8 +55,16 @@ select current_Setting('max_standby_streaming_delay');
 ----------------------------- FAILOVER TRIAL ---------------------------
 
 select current_setting('primary_conninfo');
+select current_setting('synchronous_standby_names');
+select current_setting('wal_log_hints');
 
 select* from student;
 
-update student set first_name = 'Iron' where id = 1;
+update student set first_name = 'Iron2' where id = 1;
+
+-- to promote standby to primary
+select pg_promote();
+
+-------------------------------------------------------------------------
+
 

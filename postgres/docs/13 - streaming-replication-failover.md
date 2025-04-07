@@ -316,9 +316,29 @@
 
 - Now, pgdb1 is not getting any updates from anywhere even after restart
   - this happens as the WALs could not be replayed directly due to timeline forking so we can try `pg_rewind` because its faster than a complete basebackup
-  - syntax is like `pg_rewind --target-pgdata=/var/lib/postgresql/data/pgdata --source-server='host=192.168.196.2 port=5680 user=postgres'`
+  - syntax is like `pg_rewind --target-pgdata=/var/lib/postgresql/data/pgdata2 --source-server='host=192.168.196.3 port=5432 user=postgres password=postgrespass'`
 
+- Current IPs are:
+  - pgdb1 = `192.168.196.5` (standby2 from pgdb4)
+  - pgdb2 = `192.168.196.4` (cascade_standby from pgdb3)
+  - pgdb3 = `192.168.196.3` (standby1 from pgdb4)
+  - pgdb4 = `192.168.196.2` (primary)
 - Now we'll simulate failover of pgdb2 and promote pgdb4, then attempt to restart pgdb2 with pg_rewind [TRY]
+  - First set `wal_log_hints=on` on all containers [DONE]
+    - we either need `checksums` or `wal_log_hints` for pg_rewind to work
+    - `checksums` offer more data integrity guarantees and has to be set at initialization
+    - `wal_log_hints` is a config param and has better performance (we will set this to on for now)
+    - ideally make this enabled at cluster initialization
+  - Stop `pgdb4`
+  - Run `select pg_promote();` on `pgdb3`
+  - Update `primary_conninfo` of `pgdb1` to point to `pgdb3` and restart `pgdb1`
+    - new IP of pgdb1 is `192.168.196.2` [ONLY_LOCAL]
+  - Start `pgdb4`, update `primary_conninfo` to `pgdb1` as per its IP
+    - switch user to `postgres` and duplicate `pgdata` into `pgdata2`
+    - remove `postmaster.pid`
+    - run `pg_rewind`
+    - create `standby.signal`
+    - new IP of pgdb2 is `192.168.196.5` [ONLY-LOCAL]
 
 ---
 
