@@ -19,7 +19,7 @@
 - In the `Explain Plan`, the prescence of `Gather` or `Gather Merge` node specifies that all the operations below it are executed in parallel
 - In a single query, max number of workers is specified by `max_parallel_workers_per_gather`
 - Total number of parallel workers that can exist at a time is specified by `max_worker_pocesses` and `max_parallel_workers`
-  - You can check these by `select current_setting(<paramName>)`
+  - You can check these by `select current_setting(<param_name>)` or `show <param_name>`
 - Parallel query plans are not generated if:
   - queries that write or lock any data
   - queries that use cursors or iterations with custom PL/SQL inside

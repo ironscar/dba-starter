@@ -56,7 +56,10 @@ select current_Setting('max_standby_streaming_delay');
 
 select current_setting('primary_conninfo');
 select current_setting('synchronous_standby_names');
-select current_setting('wal_log_hints');
+show wal_log_hints;
+show cluster_name;
+show recovery_target_timeline;
+show wal_keep_size;
 
 select* from student;
 
