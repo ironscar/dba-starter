@@ -319,34 +319,39 @@
   - syntax is like `pg_rewind --target-pgdata=/var/lib/postgresql/data/pgdata2 --source-server='host=192.168.196.3 port=5432 user=postgres password=postgrespass'`
 
 - Current IPs are:
-  - pgdb1 = `192.168.196.2` (primary)
-  - pgdb2 = `192.168.196.3` (standby1 from pgdb1)
-  - pgdb3 = `192.168.196.4` (cascade_standby from pgdb2)
-  - pgdb4 = `192.168.196.5` (standby2 from pgdb1)
-- Now we'll simulate failover of pgdb2 and promote pgdb4, then attempt to restart pgdb2 with pg_rewind [TRY-AGAIN]
+  - pgdb1 = `192.168.196.5` (standby2 from pgdb4)
+  - pgdb2 = `192.168.196.3` (cascade_standby from pgdb3)
+  - pgdb3 = `192.168.196.4` (standby1 from pgdb4)
+  - pgdb4 = `192.168.196.2` (primary)
+- Now we'll simulate failover of primary and promote stanby1, then attempt to restart old-primary with pg_rewind [TRY-AGAIN]
   - First set `wal_log_hints=on` on all containers
     - we either need `checksums` or `wal_log_hints` for pg_rewind to work
     - `checksums` offer more data integrity guarantees and has to be set at initialization
     - `wal_log_hints` is a config param and has better performance (we will set this to on for now)
     - ideally make this enabled at cluster initialization
-  - Let's also setup `wal_keep_size` for everything so that the standby can fetch the min recovery point from primary
+  - Let's also setup `wal_keep_size` to 16MB for everything so that the standby can fetch the min recovery point from primary
     - set this during cluster initialization
-  - Stop `pgdb1`
-  - Run `select pg_promote();` on `pgdb2`
-  - Update `primary_conninfo` of `pgdb4` to point to `pgdb2` and restart `pgdb4`
-    - new IP of `pgdb4` is `192.168.196.2` [ONLY_LOCAL]
-  - Start `pgdb1`, update `primary_conninfo` to `pgdb4` as per its IP
-    - new IP of `pgdb1` is `192.168.196.5` [ONLY-LOCAL]
+  - Double-check that the synchronous standbys are configured correctly on all containers else queries may never complete due to waiting on synchronous acknowledgement
+  - Stop `pgdb4`
+  - Run `select pg_promote();` on `pgdb3`
+  - Update `primary_conninfo` of `pgdb1` to point to `pgdb3` and restart `pgdb1`
+    - new IP of `pgdb1` is `192.168.196.2` [ONLY_LOCAL]
+  - Start `pgdb4`, update `primary_conninfo` to `pgdb3` (primary now) as per its IP
+    - new IP of `pgdb4` is `192.168.196.5` [ONLY-LOCAL]
     - switch user to `postgres` and duplicate `pgdata` into `pgdata2`
     - remove `postmaster.pid`
-    - run `pg_rewind` for `pgdata2` from source `pgdb4` [DONE]
+    - run `pg_rewind` for `pgdata2` from source `pgdb3` [DONE]
       - said done and automatically created `standby.signal`
-    - update `primaryconninfo` now
+    - double-check `primaryconninfo` and `cluster_name` now in `pgdata2`
     - rename `pgdata` to `pgdata_old` and `pgdata2` to `pgdata`, and restarted container
-      - said container failed to start due to `backup_label contains data inconsistent with control file` [FIX]
-        - double check `recovery_target_timeline=latest`, connection_info and cluster_name is set correctly in conf file before restart
-      - then it again failed to start due to `requested timeline 5 does not contain minimum revovery point on timeline 4` [FIX]
-        - can try to increase `wal_keep_segments` further
+
+[ISSUES-TO-FIX]
+- said container failed to start due to `backup_label contains data inconsistent with control file`
+  - double check `recovery_target_timeline=latest`, connection_info and cluster_name is set correctly in conf file [DID-NOT-WORK]
+  - maybe try to rewind from primary and point it to standby [DID-NOT-WORK]
+  - maybe try to set it up as a standby to the primary instead and drop the idea of a cascade standby [TRY]
+- then it again failed to start due to `requested timeline 5 does not contain minimum revovery point on timeline 4`
+  - can try to increase `wal_keep_segments` further [DID THIS AND DID NOT SEE IT AGAIN SO FAR]
 
 ---
 
