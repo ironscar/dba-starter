@@ -345,13 +345,26 @@
     - double-check `primaryconninfo` and `cluster_name` now in `pgdata2`
     - rename `pgdata` to `pgdata_old` and `pgdata2` to `pgdata`, and restarted container
 
+- let's take the cascade standby out of the picture entirely
+- stop `pgdb1` to take the primary down
+- let's promote `pgdb2`
+- let's restart `pgdb3` now pointed to `pgdb2` (new IP of pgdb3 is 192.168.196.2)
+- let's finally restart `pgdb1` also pointed to `pgdb2` (new IP of pgdb1 is 192.168.196.4)
+  - and rewind from primary before pointing it to primary
+  - remove backup_label and see what happens
+
 [ISSUES-TO-FIX]
+- then it again failed to start due to `requested timeline 5 does not contain minimum revovery point on timeline 4`
+  - can try to increase `wal_keep_segments` further [SOLVED]
 - said container failed to start due to `backup_label contains data inconsistent with control file`
   - double check `recovery_target_timeline=latest`, connection_info and cluster_name is set correctly in conf file [DID-NOT-WORK]
   - maybe try to rewind from primary and point it to standby [DID-NOT-WORK]
-  - maybe try to set it up as a standby to the primary instead and drop the idea of a cascade standby [TRY]
-- then it again failed to start due to `requested timeline 5 does not contain minimum revovery point on timeline 4`
-  - can try to increase `wal_keep_segments` further [DID THIS AND DID NOT SEE IT AGAIN SO FAR]
+  - maybe try to set it up as a standby to the primary instead and drop the idea of a cascade standby [DID-NOT-WORK]
+  - remove existing `backup_label` file from pgdata2 [DID-NOT-WORK]
+  - remove new `backup_label` file from pgdata2 [TRY]
+  - looks like `pg_rewind` cannot be run on active data directory so database has to be shut down
+    - but shutting down database is the same as shutting down the container, thus not being able to run pg_rewind
+    - its possible to run `pg_rewind` on a copy of the directory but the control file may be going out of sync due to it still being active and thus, the backup_label not matching anymore on restart
 
 ---
 

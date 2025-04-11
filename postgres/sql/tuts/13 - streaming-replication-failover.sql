@@ -63,7 +63,7 @@ show wal_keep_size;
 
 select* from student;
 
-update student set first_name = 'Iron2' where id = 1;
+update student set first_name = 'Iron3' where id = 1;
 
 -- to promote standby to primary
 select pg_promote();
