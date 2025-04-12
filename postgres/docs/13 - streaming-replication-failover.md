@@ -331,6 +331,7 @@
     - ideally make this enabled at cluster initialization
   - Let's also setup `wal_keep_size` to 16MB for everything so that the standby can fetch the min recovery point from primary
     - set this during cluster initialization
+    - `requested timeline X does not contain minimum revovery point on timeline Y` doesn't happen anymore
   - Double-check that the synchronous standbys are configured correctly on all containers else queries may never complete due to waiting on synchronous acknowledgement
   - Stop `pgdb4`
   - Run `select pg_promote();` on `pgdb3`
@@ -354,15 +355,19 @@
   - remove backup_label and see what happens
 
 [ISSUES-TO-FIX]
-- then it again failed to start due to `requested timeline 5 does not contain minimum revovery point on timeline 4`
-  - can try to increase `wal_keep_segments` further [SOLVED]
 - said container failed to start due to `backup_label contains data inconsistent with control file`
   - double check `recovery_target_timeline=latest`, connection_info and cluster_name is set correctly in conf file [DID-NOT-WORK]
   - maybe try to rewind from primary and point it to standby [DID-NOT-WORK]
   - maybe try to set it up as a standby to the primary instead and drop the idea of a cascade standby [DID-NOT-WORK]
   - remove existing `backup_label` file from pgdata2 [DID-NOT-WORK]
   - remove new `backup_label` file from pgdata2 [TRY]
-  - looks like `pg_rewind` cannot be run on active data directory so database has to be shut down
+  - create volume mapped data dirs for the container which is current primary [TRY]
+    - once container stops, you will have the specific host dir still there
+    - create a new container mapped to same volume and run pg_rewind in the run command like in https://stackoverflow.com/questions/63820214/how-to-run-pg-rewind-in-postgresql-docker-container with -R command so that is starts as standby
+    - if successfully starts up, update the cluster_name and standbys, and restart it
+
+[POSSIBLE-EXPLANATIONS]
+- looks like `pg_rewind` cannot be run on active data directory so database has to be shut down
     - but shutting down database is the same as shutting down the container, thus not being able to run pg_rewind
     - its possible to run `pg_rewind` on a copy of the directory but the control file may be going out of sync due to it still being active and thus, the backup_label not matching anymore on restart
 
