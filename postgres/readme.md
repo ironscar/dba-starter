@@ -41,6 +41,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 15. App integrations
     - With sharding and HA setup with failover
     - For procs/functions
+    - Using JSONB and semi-structured data
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
 16. Upgrade to DB versions
     - Try incremental base backups at this point
