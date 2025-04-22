@@ -392,6 +392,11 @@
   - thus, it might be better to not have synchronous standbys so as to support seamless failover
   - if we keep it as default async, transactions commit automatically and standbys get the WALs when they come back online as long as its withint the `wal_keep_segment` size
 - Today, there is no feature to wait for some timeout for synchronous standbys to acknowledge and else proceed with transaction commit locally anyway
+  - if we had a fourth server as cascaded standby to new primary configured to be synchronous with ANY 1
+  - by default, replication to cascaded standby would be async when the new primary was standby
+  - but when it becomes primary, it will become synchronous without any changes to either server
+  - as a result, transactions on primary will commit automatically even though other servers are down
+- For now, continue with `three server` setup though
 
 ---
 
