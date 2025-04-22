@@ -307,7 +307,7 @@
 
 ---
 
-### PG_REWIND [TODO]
+### PG_REWIND
 
 - when we restart pgdb1, ideally it shouldn't be accessible from any apps as it will initially still think its master and we don't want any WAL conflicts due to writes on it at this point
 - when these containers are restarted, their IPs also change
@@ -346,30 +346,52 @@
     - double-check `primaryconninfo` and `cluster_name` now in `pgdata2`
     - rename `pgdata` to `pgdata_old` and `pgdata2` to `pgdata`, and restarted container
 
-- let's take the cascade standby out of the picture entirely
-- stop `pgdb1` to take the primary down
-- let's promote `pgdb2`
-- let's restart `pgdb3` now pointed to `pgdb2` (new IP of pgdb3 is 192.168.196.2)
-- let's finally restart `pgdb1` also pointed to `pgdb2` (new IP of pgdb1 is 192.168.196.4)
-  - and rewind from primary before pointing it to primary
-  - remove backup_label and see what happens
-
 [ISSUES-TO-FIX]
 - said container failed to start due to `backup_label contains data inconsistent with control file`
   - double check `recovery_target_timeline=latest`, connection_info and cluster_name is set correctly in conf file [DID-NOT-WORK]
   - maybe try to rewind from primary and point it to standby [DID-NOT-WORK]
   - maybe try to set it up as a standby to the primary instead and drop the idea of a cascade standby [DID-NOT-WORK]
   - remove existing `backup_label` file from pgdata2 [DID-NOT-WORK]
-  - remove new `backup_label` file from pgdata2 [TRY]
-  - create volume mapped data dirs for the container which is current primary [TRY]
+  - remove new `backup_label` file from pgdata2 [DID-NOT-WORK]
+    - DB did start up but kept saying `replication terminated by primary server` and couldn't take connections being stuck in initialization
+  - create volume mapped data directory for the container which is current primary [WORKED]
     - once container stops, you will have the specific host dir still there
-    - create a new container mapped to same volume and run pg_rewind in the run command like in https://stackoverflow.com/questions/63820214/how-to-run-pg-rewind-in-postgresql-docker-container with -R command so that is starts as standby
-    - if successfully starts up, update the cluster_name and standbys, and restart it
+    - create a new container mapped to same volume and run pg_rewind in the run command like in https://stackoverflow.com/questions/63820214/how-to-run-pg-rewind-in-postgresql-docker-container with -R command so that is starts as standby and -u postgres on docker run to run rewind as postgres
+    - recreate another container on same mapping now without rewind and now things work out fine
+
+[ACTUAL-FAILOVER-PROCESS]
+- let's take the cascade standby out of the picture entirely
+- let's also recreate all the containers with directory-specific volume mappings in `/datadir` on host
+- stop `pgdb1` to take the primary down
+- let's promote `pgdb2`
+- let's restart `pgdb3` now pointed to `pgdb2` (new IP of pgdb3 is 192.168.196.2)
+- make an update in `pgdb2` and see at the end if it got replicated to both standbys
+- remove `pgdb1`
+  - cannot access the `pgdata` directory on host mapped volume so cannot remove `postmaster.pid` but this didn't cause a problem with running `pg_rewind` in next step
+- recreate `pgdb1` with same volume and add `pg_rewind -R` command in `docker run` command
+  - new IP of pgdb1 is 192.168.196.4
+  - cannot run `pg_rewind` as it attempts to run it as `root` whereas as its only allowed as `postgres`
+  - need to use `docker run with -u postgres` so that commands after run are run as `postgres` user
+  - even then, container just shuts down saying `timeline diverged and no rewind required`
+- stop/remove `pgdb1` and recreate `pgdb1` again mapped to the same volume but without `pg_rewind` command or `--user postgres`, and now finally things start up fine
+  - no changes to config required as `-R` automatically creates it as standby pointed to correct primary
+  - it does however keep overriding the `postgresql.auto.conf` with new `primary_conninfo` lines and ideally we want to keep updating only one line
+    - we can remove the `postgresql.auto.conf` and restart the container after updating actual `primary_conninfo` in `postgresql.conf` to point to `pgdb2`
+- All writes to new primary during failover now replicated to both standbys
 
 [POSSIBLE-EXPLANATIONS]
 - looks like `pg_rewind` cannot be run on active data directory so database has to be shut down
-    - but shutting down database is the same as shutting down the container, thus not being able to run pg_rewind
-    - its possible to run `pg_rewind` on a copy of the directory but the control file may be going out of sync due to it still being active and thus, the backup_label not matching anymore on restart
+  - but shutting down database is the same as shutting down the container, thus not being able to run pg_rewind
+  - its possible to run `pg_rewind` on a copy of the directory but the control file may be going out of sync due to it still being active and thus, the backup_label not matching anymore on restart
+- so we volume map it and run the rewind at start of container and then recreate another container for actual startup which is a little odd but works
+
+[CAVEATS]
+- Since all primary servers use quorum of atleast 1 synchronous standby
+  - during failover while old primary is down and other standby connection needs to be updated
+  - no writes to the DB get completed until the standby server is brought online
+  - thus, it might be better to not have synchronous standbys so as to support seamless failover
+  - if we keep it as default async, transactions commit automatically and standbys get the WALs when they come back online as long as its withint the `wal_keep_segment` size
+- Today, there is no feature to wait for some timeout for synchronous standbys to acknowledge and else proceed with transaction commit locally anyway
 
 ---
 
