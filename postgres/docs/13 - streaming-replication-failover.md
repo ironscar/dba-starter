@@ -386,6 +386,8 @@
 - so we volume map it and run the rewind at start of container and then recreate another container for actual startup which is a little odd but works
 
 [CAVEATS]
+- Sometimes `postgresql.auto.conf` overrides `postgresql.conf` (happened with cluster name)
+  - removed file the restarted container to fix it
 - Since all primary servers use quorum of atleast 1 synchronous standby
   - during failover while old primary is down and other standby connection needs to be updated
   - no writes to the DB get completed until the standby server is brought online
@@ -400,10 +402,27 @@
 
 ---
 
+## Additional considerations
+
+- Streaming replication replicates data from all tables of all schemas of all databases in cluster to standbys regardless of user ownership
+  - cannot specifically choose tables/schemas/databases
+  - but the `pg_stat_replication` is not readable to all users, it is available to `postgres` user though
+- Streaming replication doesn't replicate views and materialized views directly
+  - but querying views or MVs on standby works as expected same as primary and is internally taken care of
+- Streaming replication doesn't replicate Foreign Data Wrappers directly either
+  - for this we will temporarily bring back `pgdb4` but not add to the streaming setup, instead add new table
+  - to create the foreign server, we had to use `postgres` as `springstudent` didn't have privileges to
+  - once we create the foreign server, user-mapping and table in primary, we can also query the foreign table on standby the same way
+- Refer https://www.postgresql.org/docs/current/runtime-config-replication.html
+  - parameter `recovery_min_apply_delay` can be used to make a standby lag behind a primary by certain time (default value = 0, default unit = ms)
+  - it can be used so that any disastrous queries on primary can be avoided on standby and then data brought back from it with minimal data loss/corruption
+  - this affects synchronous_standby commits to wait for that much time so these should always be asynchronously replicated
+  - it also means WALs need to be kept on the standby for that much time which increases in disk space and may need updates to `wal_keep_segment`
+
+---
+
 ### Conclusion
 
-- Sometimes `postgresql.auto.conf` overrides `postgresql.conf` (happened with cluster name)
-  - removed file the restarted container to fix it
 - Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
 - HA setups are also discussed in detail at https://www.yugabyte.com/postgresql/postgresql-high-availability/#high-availability-with-multi-master-deployments-with-coordinator
 
