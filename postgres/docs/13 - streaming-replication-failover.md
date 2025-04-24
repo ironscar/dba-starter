@@ -423,6 +423,7 @@
 
 ### Conclusion
 
+- Refer to `postgres/img/streaming-replication-setup.png`
 - Patroni can apparently handle automatic failovers but needs extra nodes [Sharding-&-HA-Cluster-deployments]
 - HA setups are also discussed in detail at https://www.yugabyte.com/postgresql/postgresql-high-availability/#high-availability-with-multi-master-deployments-with-coordinator
 
