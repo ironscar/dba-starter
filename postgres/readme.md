@@ -39,6 +39,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Distributed Multi-master HA and failover: (https://www.yugabyte.com/postgresql/distributed-postgresql/)
 15. App integrations
     - With sharding and HA setup with failover
+      - https://aws.amazon.com/blogs/database/a-single-pgpool-endpoint-for-reads-and-writes-with-amazon-aurora-postgresql/
+      - https://hub.docker.com/r/bitnami/pgpool
     - For procs/functions
     - Using JSONB and semi-structured data
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
