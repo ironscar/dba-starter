@@ -41,13 +41,14 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - With sharding and HA setup with failover
       - https://aws.amazon.com/blogs/database/a-single-pgpool-endpoint-for-reads-and-writes-with-amazon-aurora-postgresql/
       - https://hub.docker.com/r/bitnami/pgpool
+    - For query hints (https://www.enterprisedb.com/docs/epas/latest/application_programming/optimizing_code/05_optimizer_hints/)
     - For procs/functions
     - Using JSONB and semi-structured data
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
-16. Upgrade to DB versions
+17. Upgrade to DB versions
     - Try incremental base backups at this point
     - Can we automate upgrades too? 
-17. DB DevOps strategy
+18. DB DevOps strategy
     - Secret management
     - Password rotation
     - Auto-update integration
