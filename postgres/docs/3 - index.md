@@ -74,3 +74,28 @@
   - in that case, we can either batch the updates, speed up autovacuum or rebuild the index ever so often
 
 ---
+
+## Cluster tables
+
+- A table can be clustered based on an existing index defined on the table
+  - `cluster <table> using <index>` (index here doesn't include the schema and only the name, table does include the schema)
+- If clustered, it is physically reordered based on the index
+- This is a one-time operation done on only the current table and new records don't follow order
+- Table has to be reclustered for the new records to follow the order
+- Once clustered, it is advisable to run `ANALYZE` so that the statistics are update for the planner to make good choices
+- The table remembers the index used to cluster it by so after the first time, we can just say `cluster table` and it will recluster based on the last used index
+  - so generally cluster once at start with specified index and then periodically run `cluster` and `analyze` across all clustered tables without any parameters
+- `cluster` without a table name clusters all tables previously clustered in the database
+  - this cannot be used in a transaction
+- Clustering on a partitioned table alwas requires index to be specified and also cannot be done inside a transaction
+- Clustering requires an access exclusive lock, implying that it blocks all read/write until clustering is finished
+  - the progress of running clustering operations is logged in `pg_stat_progress_cluster`
+- For a single row access, clustering is useless since the actual data order doesn't matter
+  - if multiple rows match a continuous range of an indexed column
+    - they are mostly on the same disk page if clustered and is faster to fetch
+    - if we are trying to get specific values which aren't close by, a regular index will work just as well
+  - getting all rows by sorting on the indexed column is faster when clustered since its already stored in that order
+    - if we don't order by the index and do a regular select, they will still be ordered by the index if clustered
+- We can stop the cluster's effects by dropping the corresponding index, but the ordering remains as is
+
+---

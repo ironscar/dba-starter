@@ -44,3 +44,24 @@ reindex (verbose,concurrently) index myschema.myschema_index3;
 reindex table myschema.index_trial_tasks;
 reindex schema myschema;
 reindex database student_tracker;
+
+-- clustering tables
+select* from myschema.index_trial_tasks;
+
+-- create regular index on table
+create index myschema_index5 on myschema.index_trial_tasks (mod(task_id,20));
+drop index myschema.myschema_index5;
+
+-- search without index (cost = 21)
+-- search by regular index (cost = 10.47)
+-- search by cluster index (cost = 9.03)
+select* from myschema.index_trial_tasks where mod(task_id,20) = 13;
+
+-- order without index (cost = 70.83)
+-- order by regular index (cost = 49.65)
+-- order by cluster index (cost = 34.65)
+select* from myschema.index_trial_tasks order by mod(task_id,20);
+
+-- cluster table based on index, analyze and recheck costs
+cluster myschema.index_trial_tasks using myschema_index5;
+analyze;
