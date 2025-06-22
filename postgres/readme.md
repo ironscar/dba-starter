@@ -44,6 +44,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - For query hints (https://www.enterprisedb.com/docs/epas/latest/application_programming/optimizing_code/05_optimizer_hints/)
     - For procs/functions
     - Using JSONB and semi-structured data
+    - Using complex datatypes in columns
+    - Using GIN and GIST index on those complex columns
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
 17. Upgrade to DB versions
     - Try incremental base backups at this point
