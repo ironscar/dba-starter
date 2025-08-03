@@ -57,7 +57,7 @@
 
 ---
 
-## Deferring
+## Constraint Deferring
 
 - Modes for deferring
   - `NOT DEFERRABLE INITIALLY IMMEDIATE`: meaning they are applied for each row as and when that row is updated even during bulk ops

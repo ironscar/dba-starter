@@ -8,7 +8,7 @@ This markdown contains the notes from the book of the same name
 - Client-side timeouts must be greater than server-side timeouts to avoid overpowering server with retries even though server may still be processing the older request but the client just considers them done
 - Client shouldn't do retries unless the original request fails with a high guarantee, else server overload is again possible same as above
 - Backups are super-important and must always be setup
-- Backups must be scheduled during times when system is known to have less load so that it doesn't content with actual requests
+- Backups must be scheduled during times when system is known to have less load so that it doesn't contend with actual requests
 - Spikes must be planned for
 - CAP theorum must be taken into account for your specific use case when selecting a database
 
@@ -37,10 +37,10 @@ This markdown contains the notes from the book of the same name
   - memory allocation & cache control
 - I/O & Disk
   - types of read/write operations
-  - read/write operations and hroughput determine disk quality
+  - read/write operations and throughput determine disk quality
 - Network
   - DPDK & IRQ binding
-- Most of this doesn't seem fairly low-level and not directly relevant yet but maybe down the line
+- Most of this seems fairly low-level and not directly relevant yet but maybe relevant down the line
 
 ## CHAPTER 4
 

@@ -33,6 +33,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://www.postgresql.org/docs/16/logical-replication.html [NOW]
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
 14. Sharding & HA Cluster deployments
+    - Pgbouncer: https://www.pgbouncer.org/ (for connection pooling)
+    - HAProxy: https://www.haproxy.org/ (for load balancing)
     - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
     - Citus: https://www.citusdata.com/ (for sharding)
     - YugabyteDB: https://www.yugabyte.com/yugabytedb/
@@ -47,13 +49,14 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Using complex datatypes in columns
     - Using GIN and GIST index on those complex columns
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
-17. Upgrade to DB versions
+16. Upgrade to new DB versions
     - Try incremental base backups at this point
-    - Can we automate upgrades too? 
-18. DB DevOps strategy
-    - Secret management
-    - Password rotation
-    - Auto-update integration
-    - Testing
+    - Can we automate version upgrades too?
+17. DB DevOps strategy
+    - Database updates using CI/CD
+    - Enable data lineage tracking
+    - Secret management and rotation integration
+    - Database updates testing
+    - Database monitoring
 
 ---

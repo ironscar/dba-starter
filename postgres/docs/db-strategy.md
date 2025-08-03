@@ -26,13 +26,13 @@
 - Important considerations:
   - tracking changes
   - how to rollback
-  - avoiding or detecting/mitigating drift
+  - avoiding/detecting/mitigating drift
 - Alternatives:
   - Can follow the TI way of doing it
     - write files with all data
     - add separate folders with files for procedures etc
     - cons
-      - cannot easily figure out what is deployed and what is not (especially modifications to Pl/SQL but others too)
+      - cannot easily figure out what is deployed and what is not (especially modifications to PL/SQL but others too)
         - could try to make non-editable branches for each env which can only be edited by CI/CD user while making sure merge and deploy happen with no delay
       - weird format for file names specifying unique id and which user to run queries in the file as (latter was rather unintuitive)
       - have this weird concept of using `/` and `@@` which aren't standard SQL

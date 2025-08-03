@@ -58,7 +58,7 @@
   - check cost of query (use `Explain Analyze` for selects and just `Explain` for others)
   - add index, explain plans and compare them for improvements if any
   - if no improvements, not the time to add indexes yet
-- Reindexing indexes are required if indexes get currupted
+- Reindexing indexes are required if indexes get corrupted
   - requires the schema prefix when using `REINDEX INDEX`
   - we can use `REINDEX CONCURRENTLY` option to not block reads during creation of index
   - we can use `REINDEX INDEX` to rebuild a single index

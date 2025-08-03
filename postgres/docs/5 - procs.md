@@ -171,7 +171,7 @@
 
 ### Event triggers
 
-- These get triggered when oen of the following events happen in the database
+- These get triggered when one of the following events happen in the database
   - `ddl_command_start` is evoked before executing `CREATE/ALTER/DROP/GRANT/REVOKE/SECURITY/LABEL/COMMENT`
   - `ddl_command_end` is evoked after executing the above commands
   - `table_rewrite` is evoked when a table or type is altered with `ALTER`
