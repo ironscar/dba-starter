@@ -147,14 +147,13 @@
 ## Resource consumption
 
 - Memory related
-  - `shared_buffers`: (integer - default 128MB) sets the amount of memort the DB server uses as shared memory buffer
+  - `shared_buffers`: (integer - default 128MB) sets the amount of memory the DB server uses as shared memory buffer
     - a reasonable starting value is 25% of RAM (more than 40% of RAM is unlikely to work well)
   - `huge_pages`: (on/off/try) allows using huge pages if possible, directly improves performance
   - `work_mem`: (integer - default 4MB) sets the amount of RAM to be used by a query operation before writing to temporary disk files
     - there are multiple operations in a single query and there are multiple queries in a session and multiple sessions on a server
 - Disk
   - `temp_file_limit`: (integer) specifies the max disk space that a process can use for temporary files (default is no limit)
-- Cost-based vacuum delay [CONTINUE]
 - Other params at https://www.postgresql.org/docs/current/runtime-config-resource.html
 
 ---

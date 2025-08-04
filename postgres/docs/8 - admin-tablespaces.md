@@ -10,7 +10,7 @@
   - the directory path must exist before we run this and should not be inside the data directory
     - data directory on Alpine docker image is `/var/lib/postgresql/data/pgdata`
   - we can provide the directory path to specify what tables use what disk
-  - this allows optimizing heavier operations on SSDs and lighter operations on SSDs etc
+  - this allows optimizing heavier operations on SSDs and lighter operations on HDDs etc
 - Now the Alpine docker image by default, didn't allow postgres to access directories outside data dir
   - Default user is `root` when we log into the container
   - So, we can manually go to `/var/lib/postgresql/data` and create a `custom_data_dir`

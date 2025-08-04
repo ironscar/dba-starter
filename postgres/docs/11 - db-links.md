@@ -20,7 +20,7 @@
 
 ### Single Container Link
 
-- DB link frompostgres DB to student_tracker DB (get data from student_tracker to postgres) inside one container
+- DB link from postgres DB to student_tracker DB (get data from student_tracker to postgres) inside one container
   - we can see this connection entry in `pg_stat_activity` in container
 - For this, the host and port parts of connection string can be skipped
 - Use `dblink(dbname=student_tracker user=springstudent password=springstudent options=-csearch_path=)`

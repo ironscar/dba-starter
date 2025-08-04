@@ -12,7 +12,7 @@
   - `List`: Table is partitioned based on explicit values specified for each as a list
   - `Hash`: Table is partitioned based on modulus and remainder for each partition where dividing the parttion key (column) with specified modulus will produce specified remainder
 - If we want to use other forms of partitioning, we can use `Inheritance` which maybe more flexible but not have the same performance benefits
-  - Performance benefits for declarative partitions are only there is config setting `enable_partition_pruning` is set to `on`
+  - Performance benefits for declarative partitions are only there if config setting `enable_partition_pruning` is set to `on`
 - Partitions may have their own partitions, indexes, default values distinct from other partitions
 - To find all partitions of tables, we can use `select distinct inhparent::regclass, inhrelid::regclass from pg_inherits`
   - this will also include indexes on the partition columns

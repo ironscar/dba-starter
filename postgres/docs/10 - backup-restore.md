@@ -23,7 +23,7 @@
 - A `.pgpass` file stores password in this format `hostname:port:database:username:password`
   - Example: `localhost:5432:*:postgres:[pass]` implies all databases in the local DB running on port 5432
   - Default format is `plain` which creates an sql file
-  - it also needs to be set to permissions 0600 by `chmod 600 ~/.pgpass` so that its no ignored
+  - it also needs to be set to permissions 0600 by `chmod 600 ~/.pgpass` so that its not ignored
   - We put this file in the home directory of the user that is going to execute `pg_dump`
   - When we ran `pg_dump` as `root` from within container, it didn't prompt for a password
 
@@ -122,7 +122,7 @@
 
 - Takes a base backup of a running Postgres cluster
   - basically the actual files that represent the DB instead of a set of SQL statements that can recreate the DB like in `pg_dump`
-- It can take full or incrememntal backups
+- It can take full or incremental backups
 - It can be used for PITR and streaming-replication-standby server
 - It takes backups of entire DB cluster always and cannot selectively do objects like `pg_dump`
 - It can only restore for the same DB version on same platform so new versions of DB on different OS cannot be restored unlike `pg_dump`
@@ -171,7 +171,6 @@
 
 ### Point-in-time Recovery (PITR)
 
-- Continue from https://www.postgresql.org/docs/16/continuous-archiving.html
 - This doesn't save details from the config files like `pg_hba.conf` or `postgresql.conf`
 - We take a backup of the database and then continue archiving WALs
 - WAL files are stored in `/var/lib/postgresql/data/pgdata/pg_wal`
@@ -250,7 +249,7 @@
     - we do all changes in basebackup and also make sure to change permissions of `archived_wals` in addition to backup directory
   - then we restart `postgresdb2` and this time we can see all changes from archived WAL files have been restored correctly
   - we will remove the old directories, archived directory and comment the restore command, then restart again
-    - we can see that it still works and this completes  PITR to backup server (just needed one extra initialization with the backup)
+    - we can see that it still works and this completes PITR to backup server (just needed one extra initialization with the backup)
 
 ---
 
