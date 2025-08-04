@@ -10,7 +10,7 @@
 ### Publications
 
 - A publication can be defined on any primary node (publisher)
-- Its a set of chanes generated from one/more tables
+- Its a set of changes generated from one/more tables
 - Objects must be added explicitly except when publication is created for ALL TABLES
 - It exists in only one database
 - They can be configured to publish any of INSERT/UPDATE/DELETE/TRUNCATE (default all)

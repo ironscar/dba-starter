@@ -291,13 +291,13 @@
 - Hot standbys allow readonly queries on standby servers
   - there is a latency to replication from primary to standby and hence its eventually consistent
 - If there is a large data load on primary, a similarly heavy load will be on standby via WALs
-  - thus read queries on standby will then content for resources with the replication process
+  - thus read queries on standby will then contend for resources with the replication process
 - When there are conflicts between primary and standby like dropping a table on primary while standby is being queried from that table
   - we can use params `max_standby_archive_delay` and `max_standby_streaming_delay` to define max allowed delay in applying the WALs in archive-recovery and streaming mode respectively
   - Query on standby will be cancelled if it takes longer than these delays
   - Bigger delays could reduce conflicts but would also increase eventual consistency time
 - `Vacuum` could also lead to conflicts as rows which vacuum gets rid of on primary may still be visible on standby
-  - Vacuum doesn't specifically doesnt run on standby since WALs from primary vacuum runs get sent
+  - Vacuum doesn't specifically run on standby since WALs from primary vacuum runs get sent
 - `pg_stat_database_conflicts` view on standby server can show what queries got cancelled and why
 - Certain shared memory structures are controlled by parameters like `max_connections`, `max_prepared_transactions` etc
   - ideally keep these parameters equal on primary and all standbys but if it has to increase, increase on standby first to avoid standby downtime
@@ -392,7 +392,7 @@
   - during failover while old primary is down and other standby connection needs to be updated
   - no writes to the DB get completed until the standby server is brought online
   - thus, it might be better to not have synchronous standbys so as to support seamless failover
-  - if we keep it as default async, transactions commit automatically and standbys get the WALs when they come back online as long as its withint the `wal_keep_segment` size
+  - if we keep it as default async, transactions commit automatically and standbys get the WALs when they come back online as long as its within the `wal_keep_segment` size
 - Today, there is no feature to wait for some timeout for synchronous standbys to acknowledge and else proceed with transaction commit locally anyway
   - if we had a fourth server as cascaded standby to new primary configured to be synchronous with ANY 1
   - by default, replication to cascaded standby would be async when the new primary was standby
