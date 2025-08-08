@@ -53,3 +53,15 @@ This markdown contains the notes from the book of the same name
 - This chapter discusses database drivers
 
 ---
+
+## CHAPTER 6
+
+- This chapter discusses about how getting data closer can be beneficial to applications
+- Databases can have (in growing order of flexibility): 
+  - user-defined functions and aggregates
+  - custom scripting language for the specific database
+  - support one/more general-purpose language (WebAssembly included here as well)
+    - Cassandra allows adding native functions in Java/Javascript
+- [CONTINUE HERE]
+
+---
