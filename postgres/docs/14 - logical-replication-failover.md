@@ -70,3 +70,5 @@
 ---
 
 Continue from https://www.postgresql.org/docs/16/logical-replication-subscription.html#LOGICAL-REPLICATION-SUBSCRIPTION-EXAMPLES-DEFERRED-SLOT
+
+Also refer to `origin` and `copy-data` parameters of subscriptions at https://www.postgresql.org/docs/17/sql-createsubscription.html for avoiding cyclic-recursion of updates in muti-master logical replications as mentioned in https://www.postgresql.org/message-id/CAHut%2BPuwRAoWY9pz%3DEubps3ooQCOBFiYPU9Yi%3DVB-U%2ByORU7OA%40mail.gmail.com

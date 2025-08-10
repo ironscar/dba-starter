@@ -62,6 +62,33 @@ This markdown contains the notes from the book of the same name
   - custom scripting language for the specific database
   - support one/more general-purpose language (WebAssembly included here as well)
     - Cassandra allows adding native functions in Java/Javascript
-- [CONTINUE HERE]
+- Considerations for user-defined functions:
+  - it needs to be a conscious decision to turn on JIT or not
+  - evaluate if they are needed at all if all the computation can be done in services
+  - test if CPU/memory utilization scales
+- User-defnied aggregates can be useful if:
+  - it is functionality not already built-in
+  - amount of data required for the computations are huge to transfer from DB to services and much larger than the result
+  - for user-defined aggregates, we need:
+    - an initial set of values to start from
+    - a necessary state-transition function to compute new state of values for each row
+    - an optional final function to produce result from the final state of the initial set of values
+    - a possible reduce function to combine results from multiple partial aggregate functions
+      - this can be useful to distribute the corresponding partial computations in concurrent servers
+  - ScyllaDB allows this distributed reduction functionality
+  - some databases also allow configuring storing user aggregate function results in cache somewhere
+- Web assembly (WASM) for user defined functions
+  - WASM is a binary format for representing executable code designed to be embeddable into other projects
+- Conflict-free replicated data types support the following characteristics:
+  - users can update database replicas independently without coordinating with other database servers
+  - an algorithm automatically resolve conflicts when data is written independently to replicas
+  - replicas are allowed to be in different states but they are guaranteed to eventually converge to a common state
+  - examples are G-counter, PN-counter, G-set/map, LWW-set/map
+
+---
+
+## Chapter 7
+
+- This chapter discusses infrastructure and deployment models
 
 ---
