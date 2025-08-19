@@ -90,5 +90,48 @@ This markdown contains the notes from the book of the same name
 ## Chapter 7
 
 - This chapter discusses infrastructure and deployment models
+  - specifically selecting CPU, memory, storage and networking for your distributed database
+- Storage
+  - usually the slowest component of any system
+  - disk performance is generally measured in two aspects
+    - bandwidth available for sequential reads/writes
+    - IOPS for random reads/writes
+  - for selecting a disk, there are two additional factors to consider
+    - storage technology
+    - disk size
+  - Disk types
+    - locally attached NVMe SSDs are standard when latency is critical
+    - NVMe SSDs connected to PCIe interfaces have lower latency than SATA interfaces
+    - avoid network-attached disks if there is a need for low latencies due to extra hops in network
+    - persistent disks or HDDs aren't recommended
+  - Disk setup
+    - RAID-5 setups are used to provide some sort of protection against disk failures but are slower
+    - Databases usually have internal replications to protect against disk failures too
+    - Introducing RAID-5s becomes redundant while being slower in terms of I/O performance
+    - RAID-0s are usually faster in I/O and its recommended to use all disk of same type and capacity
+    - Disks should also be given direct access to the OS over the hypervisor instead of being virtualized
+    - Don't use raw disks as they end up locking you in and are complex/error-prone
+  - Disk size
+    - databases need space for existing data, enough free space for future data and temp data like commit logs and backups
+    - in case there is internal compression, use the compressed sizes to model the required sizes
+    - every database has an ideal storage to memory ratio
+  - Maintaining disk performance over time
+    - tools like `fstrim` can be run weekly to discard unused filesystem blocks to improve I/O
+  - Tiered storage
+    - when different sets of data requires different latency but cannot be purged
+    - some databases allow rotating data over to a different shard (with a different disk type)
+- CPU
+  - High throughput usually implies more CPU usage
+  - databases designed with multithreading in mind will also benefit from more cores
+  - we shouldn't run the CPU near its limit because an unexpected spike can crash the system
+  - background processes from both the OS and the database also consume CPU so need to account for that
+- Memory
+  - RAM is faster than the fastest disk
+  - especially important for in-memory databases where the entire data needs to be stored in RAM
+  - even for other databases, they have internal caches in RAM for performance reasons
+  - the storage to memory ratio becomes important again as it also determines the cache utilization
+  - another raio is memory per core as some databases have shards per core architectures with specific memory allocated per core
+  - not enough RAM can cause unpredictable issues, even crashes
+- Network [CONTINUE]
 
 ---
