@@ -29,8 +29,8 @@ create subscription mysub
 	publication pub1;
 
 -- insert additional data to both tables in pgdb4 (publisher)
-insert into logrec.tlr1 values (3, 'LogRec-3');
-insert into logrec.tlr2 values (3, 'RecLog-3');
+insert into logrec.tlr1 values (4, 'LogRec-4');
+insert into logrec.tlr2 values (4, 'RecLog-4');
 
 -- cleanup
 drop table logrec.tlr1,logrec.tlr2;

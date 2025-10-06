@@ -145,7 +145,7 @@ docker run -d \
 ## Upgraded to v18-alpine
 
 - Attempting to use `v18-alpine` on the personal setup
-- `docker run -d -p 5432:5432 --name pgdb1 -e POSTGRES_PASSWORD=postgres --mount source=pgdata,target=/var/lib/postgresql postgres:18.0-alpine3.22`
+- `docker run -d -p 5432:5432 --name pgdb1 -e POSTGRES_PASSWORD=postgrespass --mount source=pgdata1,target=/var/lib/postgresql postgres:18.0-alpine3.22`
   - if mount is specified on another path, it creates another volume on this path by default
   - actual datadir is `/var/lib/postgresql/18/docker/`
 - Alpine also doesn't have vim installed so for editing files
