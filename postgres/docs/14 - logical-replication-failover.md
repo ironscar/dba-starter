@@ -25,7 +25,7 @@
 - A subscription defines the connection to another database and a set of one or more publications
 - It is possible to define multiple subscriptions between the same publisher and subscriber but they must not overlap
 - Only superusers can see all subscriptions from `pg_subscription`
-- If a subscription is dropped and recreated, data has to be resynchronized
+- If a subscription is dropped and recreated, data has to be resynchronized, else updates do not flow
 - The target schema and table must already exist on subscriber node with the same name as part of initial synchronization
 - Columns are also matched by name but order of columns in target table can be different, target can even have extra columns which will get filled in with default values
 
@@ -69,6 +69,6 @@
 
 ---
 
-Continue from https://www.postgresql.org/docs/16/logical-replication-subscription.html#LOGICAL-REPLICATION-SUBSCRIPTION-EXAMPLES-DEFERRED-SLOT
+Continue from https://www.postgresql.org/docs/16/logical-replication-publication.html
 
 Also refer to `origin` and `copy-data` parameters of subscriptions at https://www.postgresql.org/docs/17/sql-createsubscription.html for avoiding cyclic-recursion of updates in muti-master logical replications as mentioned in https://www.postgresql.org/message-id/CAHut%2BPuwRAoWY9pz%3DEubps3ooQCOBFiYPU9Yi%3DVB-U%2ByORU7OA%40mail.gmail.com

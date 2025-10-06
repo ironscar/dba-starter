@@ -23,11 +23,17 @@ select* from logrec.tlr2;
 show wal_level;
 create publication pub1 for table logrec.tlr1, logrec.tlr2;
 
--- create subscriptions on pgdb2 (primary of streaming setup / subscriber node)
+-- create subscriptions on pgdb2 (primary of streaming setup / subscriber node) after setting wal_level to logical
 create subscription mysub 
-	connection 'host=192.168.196.5 port=5432 user=postgres dbname=postgres password=postgrespass' 
+	connection 'host=172.26.144.1 port=5432 user=postgres dbname=postgres password=postgrespass' 
 	publication pub1;
 
 -- insert additional data to both tables in pgdb4 (publisher)
 insert into logrec.tlr1 values (3, 'LogRec-3');
 insert into logrec.tlr2 values (3, 'RecLog-3');
+
+-- cleanup
+drop table logrec.tlr1,logrec.tlr2;
+drop subscription mysub;
+drop publication pub1;
+drop schema logrec;
