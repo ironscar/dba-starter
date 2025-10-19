@@ -1,4 +1,4 @@
--- create new tables in new schema in pgdb4 & pgdb2 to be logically replicated to primary of streaming replication setup
+-- create new tables in new schema in publisher & subscriber to be logically replicated to primary of streaming replication
 create schema logrec;
 create table logrec.tlr1 (
 	id int primary key,
@@ -9,7 +9,7 @@ create table logrec.tlr2 (
 	name varchar(10) not null
 );
 
--- insert only on pgdb4 (publisher node)
+-- insert only on publisher node
 insert into logrec.tlr1 values (1, 'LogRec-1');
 insert into logrec.tlr1 values (2, 'LogRec-2');
 insert into logrec.tlr2 values (1, 'RecLog-1');
@@ -19,7 +19,7 @@ insert into logrec.tlr2 values (2, 'RecLog-2');
 select* from logrec.tlr1;
 select* from logrec.tlr2;
 
--- create publications on pgdb4 (publisher node) after setting wal_level to logical
+-- create publications on publisher node after setting wal_level to logical
 show wal_level;
 create publication pub1 for table logrec.tlr1, logrec.tlr2;
 
@@ -28,12 +28,24 @@ create subscription mysub
 	connection 'host=172.26.144.1 port=5432 user=postgres dbname=postgres password=postgrespass' 
 	publication pub1;
 
--- insert additional data to both tables in pgdb4 (publisher)
-insert into logrec.tlr1 values (4, 'LogRec-4');
-insert into logrec.tlr2 values (4, 'RecLog-4');
+-- get all subscriptions on subscriber
+select* from pg_subscription;
+
+-- get all publications and replication slots on publisher
+select* from pg_publication;
+select* from pg_replication_slots;
+
+-- insert additional data to both tables in publisher node
+insert into logrec.tlr1 values (6, 'LogRec-6');
+insert into logrec.tlr2 values (6, 'RecLog-6');
 
 -- cleanup
+delete from logrec.tlr1 where id > 2;
+delete from logrec.tlr2 where id > 2;
 drop table logrec.tlr1,logrec.tlr2;
+select pg_drop_replication_slot('mysub');
+alter subscription mysub disable;
+alter subscription mysub set (slot_name = NONE);
 drop subscription mysub;
 drop publication pub1;
 drop schema logrec;

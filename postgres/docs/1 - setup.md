@@ -14,6 +14,10 @@
   - Procedures
   - Sequences
   - Triggers
+- To open multiple sql files in pgadmin
+  - open the `Query tool workspace` and click the ellipsis on the top right corner and select `Open > Welcome`
+  - then select a connected DB server and connect to it
+  - repeat the steps, even with the same DB server, and it will open up a new tab for it
 
 ---
 
@@ -152,6 +156,9 @@ docker run -d \
   - we first use `grep <pattern> <filename>` to find what exactly needs to be changed
   - then `sed -i 's/<text to be replaced>/<new text>/g' <filename>` to change it
   - then verify using `grep` again
+  - for updating properties that have single-quotes in them such as `cluster_name`, we do the following
+    - `sed -i 's/#cluster_name = '\'\''/cluster_name = '\''pgdb1'\''/g' postgresql.conf`
+    - basically close the actual single-quote and insert a single-quote with a backslash, then start an actual single-quote for the strings
 - Refer to `networking.md` for the debugging and caveats of the network details of the personal setup
 
 ---
