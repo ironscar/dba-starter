@@ -123,6 +123,10 @@
   - after promote, we need to make sure that all relevant logical replication slots are copied to the standby and ready for sync since the copy is asynchronous
   - then, alter the connection string of the subscription to promoted standby and enable the subscription
 
+### Trial
+
+- Create new `pgdb3` container which will act as the standby and setup streaming replication with `pgdb1` after taking a basebackup [NOW]
+
 ---
 
 ## Learnings

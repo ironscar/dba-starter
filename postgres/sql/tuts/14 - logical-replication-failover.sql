@@ -40,12 +40,12 @@ select* from pg_replication_slots;
 insert into logrec.tlr1 values (6, 'LogRec-6');
 insert into logrec.tlr2 values (6, 'RecLog-6');
 
--- logical failover slots to consider on subscriber
+-- find logical failover slots to consider on subscriber
 SELECT subslotname FROM  pg_subscription
 WHERE subfailover AND subslotname IS NOT NULL
 ;
 
--- logical failover slots replication status on promoted standby
+-- verify logical failover slots replication status on promoted standby
 SELECT slot_name, (synced AND NOT temporary AND invalidation_reason IS NULL) AS failover_ready
 FROM pg_replication_slots
 WHERE slot_name IN ('mysub');
