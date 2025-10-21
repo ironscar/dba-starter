@@ -65,9 +65,7 @@
 
 ## Setup logical replication
 
-### Work laptop v16 setup
-
-- Current IP assignments
+- Work laptop setup (current IP assignments):
   - pgdb1: 192.168.196.2 
   - pgdb2: 192.168.196.3 (streaming primary)
   - pgdb3: 192.168.196.4
@@ -93,22 +91,52 @@
 - Next we will try inserting data into `pgdb4` and see if it gets replicated everywhere
   - after insert, logical replication publishes it to `pgdb2` and then streams it to `pgdb1` and `pgdb3`
 
-### Personal laptop v18 setup
+### Resynchronization
 
-- pgdb1 (172.18.0.2) on port 5432 and pgdb2 (172.18.0.3) on port 5433 on WSL (172.26.144.1)
-- pgdb1 will be primary and pgdb2 will be secondary
-- creating subscription after creating empty tables helps the updates to flow, otherwise might need to resynchronize via `pg_dump / pg_restore`
-
----
-
-## Issues
-
-- When subscriber is shut down, then queries take extremely long on publisher, but resolves the moment the subscriber comes back online [CHECK]
-  - Check if setting `synchronous_commit = off` helps [DID-NOT-WORK]
-  - It randomly got resolved on its own so not really sure what happened
+- Start with personal setup where pgdb1 already has a few records
+  - pgdb1 (172.18.0.2) on port 5432 and pgdb2 (172.18.0.3) on port 5433 on WSL (172.26.144.1)
+  - pgdb1 will be primary and pgdb2 will be secondary
+- running `pg_dump -Ft --no-data -t 'logrec.*' postgres -h 172.18.0.2 -p 5432 -U postgres > logrec.tar` on pgdb2 creates a TAR dump of all tables in `logrec` schema from pgdb1
+- running `pg_restore -d postgres -U postgres logrec.tar` restores the dump into pgdb2 with those tables but no data
+- we do `--no-data` because if data is there, new data doesn't seem to flow at all even after the subscription is created
+- if tables are empty, then after creating subscription, the existing data is copied automatically and additional data starts flowing
 
 ---
 
-Continue from https://www.postgresql.org/docs/18/logical-replication-failover.html
+## Logical replication failover
 
-Also refer to `origin` and `copy-data` parameters of subscriptions at https://www.postgresql.org/docs/17/sql-createsubscription.html for avoiding cyclic-recursion of updates in muti-master logical replications as mentioned in https://www.postgresql.org/message-id/CAHut%2BPuwRAoWY9pz%3DEubps3ooQCOBFiYPU9Yi%3DVB-U%2ByORU7OA%40mail.gmail.com
+- This is used to allow subscriber nodes to continue replicating data from publisher even after publisher goes down
+- The logical slots can be specified with `failover = true` when creating subscription to enable this feature
+  - this ensures a seamless transition once the standby is promoted for it to act as the new logical publisher
+- This process has a few prerequisites:
+  - the current publisher and standby must be setup with streaming replication
+  - the standby must have `sync_replication_slots = on` so that the replication slots can be synced asynchronously using a slotsync worker
+  - it is mandatory to have a physical replication slot between primary and standby by configuring a `primary_slot_name` on the standby
+  - `hot_standby_feedback = on` must also be set on the standby
+  - its also recommended to set `synchronized_standby_slots` for the physical slot on the primary to prevent the subscriber from consuming changes faster than the standby
+    - basically the standby gets updates synchronously and is guaranteed to stay ahead of the subscriber which gets updates asynchronously
+    - make sure not to add the logical slots to `synchronized_standby_slots` in that case
+  - refer to https://www.postgresql.org/docs/18/logicaldecoding-explanation.html#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION for additional details and caveats
+- Once the current publisher (primary) goes down
+  - it is recommended to disable the subscription on subscribers
+  - then we must promote the standby
+  - after promote, we need to make sure that all relevant logical replication slots are copied to the standby and ready for sync since the copy is asynchronous
+  - then, alter the connection string of the subscription to promoted standby and enable the subscription
+
+---
+
+## Learnings
+
+- Logical replication is useful for doing one-time migrations / upgrades across different Postgres versions or hosts
+  - especially when we need some dynamic updates to flow in while we migrate which cannot be done using `pg_dump`
+  - if dynamic updates are not required, rely on `pg_dump` alone
+- Logical replication doesn't include DDL and is not a good alternative to physical streaming replication and true HA setups
+- Ideal setup would be:
+  - `pg_basebackup` if need to migrate / copy data without dynamic updates into same Postgres version on same type of host 
+  - `pg_dump` if just need to migrate / copy data without dynamic updates into new Postgres version or new type of host
+  - streaming replication with failovers for true HA setups
+  - logical replication with failovers for migrations / upgrades requiring dynamic updates to flow in
+- Also refer to `origin` and `copy-data` parameters of subscriptions at https://www.postgresql.org/docs/17/sql-createsubscription.html for avoiding cyclic-recursion of updates in muti-master logical replications as mentioned in https://www.postgresql.org/message-id/CAHut%2BPuwRAoWY9pz%3DEubps3ooQCOBFiYPU9Yi%3DVB-U%2ByORU7OA%40mail.gmail.com
+- Continue from https://www.postgresql.org/docs/18/logical-replication-failover.html
+
+---
