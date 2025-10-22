@@ -158,7 +158,7 @@ docker run -d \
   - then verify using `grep` again
   - for updating properties that have single-quotes in them, we do the following
     - `sed -i 's/#cluster_name = '\'\''/cluster_name = '\''pgdb1'\''/g' postgresql.conf`
-    - `sed -i 's/#primary_conninfo = '\'\''/primary_conninfo='\''host=172.18.0.2 port=5432 user=postgres options='\'\''-c wal_sender_timeout=5000'\'\'\''/g' postgresql.conf`
+    - `sed -i 's/#primary_conninfo = '\'\''/primary_conninfo='\''host=172.18.0.2 port=5432 user=postgres dbname=postgres options='\'\''-c wal_sender_timeout=5000'\'\'\''/g' postgresql.conf`
     - basically close the actual single-quote and insert a single-quote with a backslash, then start an actual single-quote for the strings
   - for adding new lines to existing files such as new entries in `pg_hba.conf`
     - `echo "host replication all 172.18.0.2/32 trust" >> pg_hba.conf`

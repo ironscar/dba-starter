@@ -93,9 +93,9 @@
 
 ### Resynchronization
 
-- Start with personal setup where pgdb1 already has a few records
+- Start with personal laptop setup where pgdb1 already has a few records
   - `pgdb1 (172.18.0.2)` on port `5432` and `pgdb2 (172.18.0.3)` on port `5433` on `WSL (172.26.144.1)`
-  - pgdb1 will be primary and pgdb2 will be secondary
+  - pgdb3 will be initial primary and pgdb2 will be secondary
 - running `pg_dump -Ft --no-data -t 'logrec.*' postgres -h 172.18.0.2 -p 5432 -U postgres > logrec.tar` on pgdb2 creates a TAR dump of all tables in `logrec` schema from pgdb1
 - running `pg_restore -d postgres -U postgres logrec.tar` restores the dump into pgdb2 with those tables but no data
 - we do `--no-data` because if data is there, new data doesn't seem to flow at all even after the subscription is created
@@ -112,44 +112,66 @@
   - the current publisher and standby must be setup with streaming replication
   - the standby must have `sync_replication_slots = on` so that the replication slots can be synced asynchronously using a slotsync worker
   - it is mandatory to have a physical replication slot between primary and standby by configuring a `primary_slot_name` on the standby
-  - `hot_standby_feedback = on` must also be set on the standby
+  - `hot_standby_feedback = on` must also be set on the standby and `primary_conninfo` must include a valid `dbname` and `password`
+    - even if streaming replication works without password, the `slotsync_worker` still needs a password to connect
   - its also recommended to set `synchronized_standby_slots` for the physical slot on the primary to prevent the subscriber from consuming changes faster than the standby
     - basically the standby gets updates synchronously and is guaranteed to stay ahead of the subscriber which gets updates asynchronously
     - make sure not to add the logical slots to `synchronized_standby_slots` in that case
   - refer to https://www.postgresql.org/docs/18/logicaldecoding-explanation.html#LOGICALDECODING-REPLICATION-SLOTS-SYNCHRONIZATION for additional details and caveats
 - Once the current publisher (primary) goes down
   - it is recommended to disable the subscription on subscribers
+    - this doesn't lead to loss of data as the updates are stored based on the associated replication slot on the publisher
+    - once the subscription is restarted, the slot sends over all this data
+    - however, this can also lead to data bloat at the slot level if too much time is taken before the subscription is enabled
   - then we must promote the standby
   - after promote, we need to make sure that all relevant logical replication slots are copied to the standby and ready for sync since the copy is asynchronous
   - then, alter the connection string of the subscription to promoted standby and enable the subscription
 
 ### Trial
 
-- Create new `pgdb3 (172.18.0.4)` container running on host port 5434 which will act as the standby
-  - enable connections from pgdb3 to pgdb1 etc by updating `pg_hba.conf`
+- Create new `pgdb3 (172.18.0.4)` container running on host port 5434 which will act as the primary
+  - enable connections from pgdb1 to pgdb3 etc by updating `pg_hba.conf`
   - take basebackup and restart container
   - update `cluster_name` for all containers to differentiate
-  - add `standby.signal` and update `primary_conninfo` so that it can start acting as standby
+  - add `standby.signal` and update `primary_conninfo` with `dbname` and `password` so that it can start acting as standby
   - set `sync_replication_slots = on`, `hot_standby_feedback = on, primary_slot_name = 'standby_1'` on standby
   - setting `wal_level = logical` is required for `sync_replication_slots = on`
   - restart container again
   - now streaming replication should be working with all pre-requisites on standby
 - Setup logical replication with `pgdb2`
-  - create publication for tables in `pgdb1` and verify publication gets created on `pgdb3` automatically
+  - create publication for tables in `pgdb3` and verify publication gets created on `pgdb1` automatically
   - create empty tables and then subscription with `failover = true` on `pgdb2`
-  - now logical replication between `pgdb1` and `pgdb2` would also be working
-- Current setup: `pgdb3 ---<--- PHYSICAL ---<--- pgdb1 --->--- LOGICAL --->--- pgdb2`
-- Now we need to simulate a failover by stopping `pgdb1`
-  - Need to stop pgdb1
-  - Then manual disable subscription on pgdb2
-  - Then manual promote of standby pgdb3
-  - Then manual update of subscription host on pgdb2
-  - Then manual enable subscription on pgdb2
-  - Verify logical failover replication [NOT-WORKING]
-    - looks like the logical replication slot (or any replication slot for that matter) is not on the standby [CHECK]
-    - created manual slots for now but didn't verify much and `pgdb1` is a new empty container as the old one kept having timeline issues
-  - Then manual bring back pgdb1 as standby of pgdb2 ready for next failover
-  - Verify physical replication from pgdb3 to pgdb1
+  - now logical replication between `pgdb3` and `pgdb2` would also be working
+  - now both `pgdb1` and `pgdb3` would have an entry for the failover subscription in `pg_replication_slots`
+- Current setup: `pgdb1 ---<--- PHYSICAL ---<--- pgdb3 --->--- LOGICAL --->--- pgdb2`
+- Now we need to simulate a failover by stopping `pgdb3`
+  - Need to stop pgdb3
+  - Then do following following manual steps
+    - disable subscription on pgdb2
+    - promote of standby pgdb1
+    - update of subscription host on pgdb2
+    - enable subscription on pgdb2 
+  - Verify logical failover replication
+    - chances are that currently `standby_1` physical replication slot doesn't exist on new primary `pgdb1`
+    - but `synchronized_standby_slots` refers to it and blocks logical replication
+    - so let's comment `synchronized_standby_slots = 'standby_1'` and reload config using `select pg_reload_conf()`
+    - now even after this there could be problems because once it finds this issue, it doesn't keep trying
+      - logical replication gets paused here so that in case there is a standby on a sync replication slot, it should remain ahead of the logical standby to allow future failover successfully
+    - so we restart `pgdb2` and then logical replication starts working
+  - Now, lets recover `pgdb3` as standby of `pgdb1` ready for next failover [DID-NOT-WORK]
+    - this didn't work though as timelines diverged
+    - we aren't redoing this as this is ultimately same as recovery in physical streaming replication with some more config updates
+    - instead, we started with a new container and once streaming and slotsync started working, we enabled the `synchronized_standby_slots`
+      - in a dynamic production environment, this may mean disabling the subscription again so that the standby can remain ahead
+- Current personal laptop setup: `pgdb3 ---<--- PHYSICAL ---<--- pgdb1 --->--- LOGICAL --->--- pgdb2`
+
+---
+
+## Additional logical replication concepts
+
+### Row filters
+
+- Continue from https://www.postgresql.org/docs/18/logical-replication-row-filter.html
 
 ---
 
@@ -165,6 +187,5 @@
   - streaming replication with failovers for true HA setups
   - logical replication with failovers for migrations / upgrades requiring dynamic updates to flow in
 - Also refer to `origin` and `copy-data` parameters of subscriptions at https://www.postgresql.org/docs/17/sql-createsubscription.html for avoiding cyclic-recursion of updates in muti-master logical replications as mentioned in https://www.postgresql.org/message-id/CAHut%2BPuwRAoWY9pz%3DEubps3ooQCOBFiYPU9Yi%3DVB-U%2ByORU7OA%40mail.gmail.com
-- Continue from https://www.postgresql.org/docs/18/logical-replication-failover.html
 
 ---

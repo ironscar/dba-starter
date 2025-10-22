@@ -137,6 +137,8 @@
   - make sure during this time, DB is not being used and is not externally accessible over network
 - After saving this file, restart Postgres by `pg_ctl -D restart`
   - stopping/starting docker container should also work in this case
+  - some config params can be reloaded using `select pg_reload_conf();` but not all
+    - we can verify these by running `show <config_param>` on pgAdmin to see if the updates have come up
 - Set new password by `ALTER ROLE <role> WITH PASSWORD '<password>'`
 - Delete the current `pg_hba.conf` file and rename the backup to `pg_hba.conf`
 - Restart Postgres again (pg_ctl or docker whichever works)
