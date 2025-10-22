@@ -149,16 +149,19 @@ docker run -d \
 ## Upgraded to v18-alpine
 
 - Attempting to use `v18-alpine` on the personal setup
-- `docker run -d -p 5432:5432 --name pgdb1 -e POSTGRES_PASSWORD=postgrespass --mount source=pgdata1,target=/var/lib/postgresql postgres:18.0-alpine3.22`
+- `docker run -d -p 5432:5432 --name pgdb1 --network demo-net -e POSTGRES_PASSWORD=postgrespass --mount source=pgdata1,target=/var/lib/postgresql postgres:18.0-alpine3.22`
   - if mount is specified on another path, it creates another volume on this path by default
   - actual datadir is `/var/lib/postgresql/18/docker/`
 - Alpine also doesn't have vim installed so for editing files
   - we first use `grep <pattern> <filename>` to find what exactly needs to be changed
   - then `sed -i 's/<text to be replaced>/<new text>/g' <filename>` to change it
   - then verify using `grep` again
-  - for updating properties that have single-quotes in them such as `cluster_name`, we do the following
+  - for updating properties that have single-quotes in them, we do the following
     - `sed -i 's/#cluster_name = '\'\''/cluster_name = '\''pgdb1'\''/g' postgresql.conf`
+    - `sed -i 's/#primary_conninfo = '\'\''/primary_conninfo='\''host=172.18.0.2 port=5432 user=postgres options='\'\''-c wal_sender_timeout=5000'\'\'\''/g' postgresql.conf`
     - basically close the actual single-quote and insert a single-quote with a backslash, then start an actual single-quote for the strings
+  - for adding new lines to existing files such as new entries in `pg_hba.conf`
+    - `echo "host replication all 172.18.0.2/32 trust" >> pg_hba.conf`
 - Refer to `networking.md` for the debugging and caveats of the network details of the personal setup
 
 ---

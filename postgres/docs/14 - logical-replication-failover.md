@@ -94,7 +94,7 @@
 ### Resynchronization
 
 - Start with personal setup where pgdb1 already has a few records
-  - pgdb1 (172.18.0.2) on port 5432 and pgdb2 (172.18.0.3) on port 5433 on WSL (172.26.144.1)
+  - `pgdb1 (172.18.0.2)` on port `5432` and `pgdb2 (172.18.0.3)` on port `5433` on `WSL (172.26.144.1)`
   - pgdb1 will be primary and pgdb2 will be secondary
 - running `pg_dump -Ft --no-data -t 'logrec.*' postgres -h 172.18.0.2 -p 5432 -U postgres > logrec.tar` on pgdb2 creates a TAR dump of all tables in `logrec` schema from pgdb1
 - running `pg_restore -d postgres -U postgres logrec.tar` restores the dump into pgdb2 with those tables but no data
@@ -125,7 +125,31 @@
 
 ### Trial
 
-- Create new `pgdb3` container which will act as the standby and setup streaming replication with `pgdb1` after taking a basebackup [NOW]
+- Create new `pgdb3 (172.18.0.4)` container running on host port 5434 which will act as the standby
+  - enable connections from pgdb3 to pgdb1 etc by updating `pg_hba.conf`
+  - take basebackup and restart container
+  - update `cluster_name` for all containers to differentiate
+  - add `standby.signal` and update `primary_conninfo` so that it can start acting as standby
+  - set `sync_replication_slots = on`, `hot_standby_feedback = on, primary_slot_name = 'standby_1'` on standby
+  - setting `wal_level = logical` is required for `sync_replication_slots = on`
+  - restart container again
+  - now streaming replication should be working with all pre-requisites on standby
+- Setup logical replication with `pgdb2`
+  - create publication for tables in `pgdb1` and verify publication gets created on `pgdb3` automatically
+  - create empty tables and then subscription with `failover = true` on `pgdb2`
+  - now logical replication between `pgdb1` and `pgdb2` would also be working
+- Current setup: `pgdb3 ---<--- PHYSICAL ---<--- pgdb1 --->--- LOGICAL --->--- pgdb2`
+- Now we need to simulate a failover by stopping `pgdb1`
+  - Need to stop pgdb1
+  - Then manual disable subscription on pgdb2
+  - Then manual promote of standby pgdb3
+  - Then manual update of subscription host on pgdb2
+  - Then manual enable subscription on pgdb2
+  - Verify logical failover replication [NOT-WORKING]
+    - looks like the logical replication slot (or any replication slot for that matter) is not on the standby [CHECK]
+    - created manual slots for now but didn't verify much and `pgdb1` is a new empty container as the old one kept having timeline issues
+  - Then manual bring back pgdb1 as standby of pgdb2 ready for next failover
+  - Verify physical replication from pgdb3 to pgdb1
 
 ---
 

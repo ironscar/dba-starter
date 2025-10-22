@@ -37,18 +37,41 @@ select* from pg_publication;
 select* from pg_replication_slots;
 
 -- insert additional data to both tables in publisher node
-insert into logrec.tlr1 values (6, 'LogRec-6');
-insert into logrec.tlr2 values (6, 'RecLog-6');
+insert into logrec.tlr1 values (5, 'LogRec-5');
+insert into logrec.tlr2 values (5, 'RecLog-5');
+
+-------------------------------------------------------------------
+
+-- create physical replication slot on primary for standby
+select pg_create_physical_replication_slot('standby_1');
+select pg_create_logical_replication_slot('mysub','pgoutput','false','true');
+
+-- create failover subscription on pgdb2 (here we do it based on container IP instead of WSL port)
+create subscription mysub 
+	connection 'host=172.18.0.2 port=5432 user=postgres dbname=postgres password=postgrespass' 
+	publication pub1 with (failover = true);
 
 -- find logical failover slots to consider on subscriber
 SELECT subslotname FROM  pg_subscription
 WHERE subfailover AND subslotname IS NOT NULL
 ;
 
+-- disable subscription on subscriber
+alter subscription mysub disable;
+
+-- promote standby
+select pg_promote();
+
+-- update connection for subscription on subscriber and then enable
+alter subscription mysub connection 'host=172.18.0.4 port=5432 user=postgres dbname=postgres password=postgrespass';
+alter subscription mysub enable;
+
 -- verify logical failover slots replication status on promoted standby
 SELECT slot_name, (synced AND NOT temporary AND invalidation_reason IS NULL) AS failover_ready
 FROM pg_replication_slots
 WHERE slot_name IN ('mysub');
+
+-------------------------------------------------------------------
 
 -- cleanup
 delete from logrec.tlr1 where id > 2;
@@ -57,6 +80,6 @@ alter subscription mysub disable;
 alter subscription mysub set (slot_name = NONE);
 drop subscription mysub;
 select pg_drop_replication_slot('mysub');
-drop table logrec.tlr1,logrec.tlr2;
+truncate table logrec.tlr1,logrec.tlr2;
 drop publication pub1;
 drop schema logrec;
