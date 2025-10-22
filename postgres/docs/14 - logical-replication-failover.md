@@ -65,6 +65,7 @@
 
 ## Setup logical replication
 
+- Security aspects of logical replication specified at https://www.postgresql.org/docs/18/logical-replication-security.html
 - Work laptop setup (current IP assignments):
   - pgdb1: 192.168.196.2 
   - pgdb2: 192.168.196.3 (streaming primary)
@@ -113,6 +114,7 @@
   - the standby must have `sync_replication_slots = on` so that the replication slots can be synced asynchronously using a slotsync worker
   - it is mandatory to have a physical replication slot between primary and standby by configuring a `primary_slot_name` on the standby
   - `hot_standby_feedback = on` must also be set on the standby and `primary_conninfo` must include a valid `dbname` and `password`
+    - having the password here maybe a security concern so its possible to specify in a `pgpass` file
     - even if streaming replication works without password, the `slotsync_worker` still needs a password to connect
   - its also recommended to set `synchronized_standby_slots` for the physical slot on the primary to prevent the subscriber from consuming changes faster than the standby
     - basically the standby gets updates synchronously and is guaranteed to stay ahead of the subscriber which gets updates asynchronously
@@ -143,6 +145,8 @@
   - create empty tables and then subscription with `failover = true` on `pgdb2`
   - now logical replication between `pgdb3` and `pgdb2` would also be working
   - now both `pgdb1` and `pgdb3` would have an entry for the failover subscription in `pg_replication_slots`
+    - the standby only gets those slots synchronized which are used for logical replication and are marked with `failover=true`
+    - it takes a little bit of time for this to happen because slotsync is asynchronous
 - Current setup: `pgdb1 ---<--- PHYSICAL ---<--- pgdb3 --->--- LOGICAL --->--- pgdb2`
 - Now we need to simulate a failover by stopping `pgdb3`
   - Need to stop pgdb3
@@ -171,7 +175,82 @@
 
 ### Row filters
 
-- Continue from https://www.postgresql.org/docs/18/logical-replication-row-filter.html
+- Row filters are set at the publication-level
+- They allow filtering which rows are published to subscriptions based on specified conditions
+  - this is done as `create publication <pub_name> for table <table_name> where (<conditions>)` and the paranthesis is necessary around conditions
+  - conditions cannot contain user-defined functions, operators, types, collations, system column references or non-immutable built-in functions
+- Row filters have no effect for `TRUNCATE`
+- For `UPDATE`, row filters are evaluated on both the old and new rows
+  - if both are true, its replicated as an update
+  - if both are false, its not replicated at all
+  - if old is true and new is false, then its replicated as a DELETE
+  - if old is false and new is true, then its replicated as INSERT
+- During initial logical synchronization, only rows that match the row filter are copied over
+- If the same table is published on different publications with different row filters for the same operation, the effective condition is OR of all of the individual ones
+- In partitioned tables, we can specify the `publish_via_partition_root` boolean flag to specify if parent (root) row filter gets used or child row filter gets used in create publication statement
+
+### Column lists
+
+- Allows defining a list of columns to be published instead of all columns of the table
+  - they are specified as `create publication <pub_name> for table <table_name> (<column1, column2 ....>)` with paranthesis for column list
+- Recommended to include the primary key or some index column (especially for UPDATE and DELETE)
+- If no columns are specified, then any new columns added later are also automatically picked up
+
+### Conflicts
+
+- Since changes are allowed on subscriber as well, it can lead to data conflicts
+- If incoming data violates any constraints, then replication will stop
+- Conflict statistics show up in `pg_stat_subscription_stats` for the following:
+  - `insert_exists`: Occurs when a row being inserted violates a `NOT DEFEREABLE` and `UNIQUE` constraint
+    - needs `track_commit_timestamp = on` on subscriber to track the origin / timestamp of change origin
+    - an error is raised until issue is resolved manually
+  - `update_origin_differs`: Occurs when updating a row that was already updated by something else
+    - needs `track_commit_timestamp = on` on subscriber to detect this
+    - the update is currently always applied regardless of the origin
+  - `update_exists`: Occurs when a row being updated violates a `NOT DEFEREABLE` and `UNIQUE` constraint
+    - needs `track_commit_timestamp = on` on subscriber to track the origin / timestamp of change origin
+    - an error is raised until issue is resolved manually
+  - `update_missing`: Occurs when row to be updated doesn't exist
+    - updates are skipped in this case
+  - `delete_origin_differs`: Occurs when deleting a row that was already updated by something else
+    - needs `track_commit_timestamp = on` on subscriber to detect this
+    - the delete is currently always applied regardless of the origin
+  - `delete_missing`: Occurs when row to be deleted doesn't exist
+    - deletes are skipped in this case
+  - `multiple_unique_conflicts`: Occurs when a row being inserted / updated violates multiple `NOT DEFEREABLE` and `UNIQUE` constraints
+    - needs `track_commit_timestamp = on` on subscriber to track the origin / timestamp of change origin
+    - an error is raised until issue is resolved manually
+- There are other violations that aren't captured in the above view such as exclusion constraint violations
+- Details about these conflicts can be found in the subscriber logs
+- More info at https://www.postgresql.org/docs/18/logical-replication-conflicts.html
+
+- Try introducing and resolving one missing and one manual conflict [TODO]
+
+### Restrictions
+
+- Logical replication (v18) has current restrictions which maybe addressed in the future
+  - DDL is not replicated so if schema changes on publisher and not on subscriber, replication will error out until subscriber schema is fixed
+    - usually better to apply schema changes to subscriber first
+  - Sequences are not replicated
+    - the data in tables which were generated by sequence will be correct
+    - but the current value of sequence on subscriber (if it even exists) will have initial value
+  - Truncate over logical replication may fail if there are multiple tables with foreign key relations and some of them aren't in the publication
+  - Large objects (https://www.postgresql.org/docs/18/largeobjects.html) cannot be logically replicated
+  - Logical replication is not supported over views, materialized views or foreign tables
+    - partitioned tables are allowed as long as the same partitions exist on subscriber
+
+### Relevant configuration settings
+
+- For publishers:
+  - `wal_level = logical`
+  - `max_replication_slots` set to a number greater than total number of subscriptions and some extra initial table synchronization workers
+  - `max_wal_senders` set to number of physical replicas + `max_replication_slots`
+- For subscribers:
+  - `max_active_replication_origins` set to a number greater than total number of subscriptions and some extra initial table synchronization workers
+  - `max_logical_replication_workers` set to a number greater than total number of subscriptions and some extra initial table synchronization workers
+  - `max_worker_processes` set to `max_logical_replication_workers + 1` (and additionally any more required for parallel queries)
+  - `max_sync_workers_per_subscription` controls amount of parallelization in initial data copy
+  - `max_parallel_apply_workers_per_subscription` controls amount of parallelization for in-progress transactions if subscription parameter `streaming = parallel`
 
 ---
 

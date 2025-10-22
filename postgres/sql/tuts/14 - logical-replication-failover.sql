@@ -82,18 +82,54 @@ WHERE slot_name IN ('mysub');
 
 -------------------------------------------------------------------
 
--- Additional logical replication stuff
+-- Row filters
+
+-- create table on publisher and insert data (also just create on subscriber)
+create table logrec.row_filter_trial (
+	id int primary key,
+	name varchar(10) not null
+);
+insert into logrec.row_filter_trial values (1, 'RF-1');
+insert into logrec.row_filter_trial values (2, 'RF-2');
+insert into logrec.row_filter_trial values (3, 'RF-3');
+insert into logrec.row_filter_trial values (4, 'RF-4');
+insert into logrec.row_filter_trial values (5, 'RF-5');
+
+-- create publication with row filter on publisher
+create publication row_filter_pub for table logrec.row_filter_trial where (id > 2);
+
+-- create subscription on subscriber
+create subscription row_filter_sub
+	connection 'host=172.18.0.2 port=5432 user=postgres dbname=postgres password=postgrespass' 
+	publication row_filter_pub with (failover = true);
+
+-- verify only rows satisfying condition are replicated on subscriber
+select* from logrec.row_filter_trial;
+
+-------------------------------------------------------------------
+
+-- Conflicts
+
+-- conflict stats per subscription
+select* from pg_stat_subscription_stats;
 
 -------------------------------------------------------------------
 
 -- cleanup
 delete from logrec.tlr1 where id > 2;
 delete from logrec.tlr2 where id > 2;
+delete from logrec.row_filter_trial where id > 2;
 alter subscription mysub disable;
 alter subscription mysub set (slot_name = NONE);
 drop subscription mysub;
+alter subscription row_filter_sub disable;
+alter subscription row_filter_sub set (slot_name = NONE);
+drop subscription row_filter_sub;
 select pg_drop_replication_slot('mysub');
+select pg_drop_replication_slot('row_filter_sub');
 select pg_drop_replication_slot('standby_1');
 truncate table logrec.tlr1,logrec.tlr2;
+truncate table logrec.row_filter_trial;
 drop publication pub1;
+drop publication row_filter_pub;
 drop schema logrec;

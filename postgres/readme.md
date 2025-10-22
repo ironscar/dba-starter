@@ -50,7 +50,8 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - Using GIN and GIST index on those complex columns
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
 16. Upgrade to new DB versions
-    - Try incremental base backups at this point
+    - https://www.postgresql.org/docs/current/pgupgrade.html
+    - https://www.postgresql.org/docs/18/logical-replication-upgrade.html
     - Can we automate version upgrades too?
 17. DB DevOps strategy
     - Database updates using CI/CD
