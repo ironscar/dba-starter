@@ -31,8 +31,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
 13. High availability, replication & failover [NOW]
     - https://www.postgresql.org/docs/16/high-availability.html [DONE]
     - https://www.postgresql.org/docs/16/logical-replication.html [DONE]
-    - https://pgdash.io/blog/horizontally-scaling-postgresql.html
-14. Sharding & HA Cluster deployments
+14. Sharding & HA Cluster deployments [NOW]
     - Pgbouncer: https://www.pgbouncer.org/ (for connection pooling)
     - HAProxy: https://www.haproxy.org/ (for load balancing)
     - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
