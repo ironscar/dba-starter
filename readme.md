@@ -4,10 +4,24 @@ A learning project for data engineering and administration of various types of S
 
 ## Todos
 
-- Oracle/Postgres [PROGRESS]
-- Redis/Valkey/Dragonfly
-- ScyllaDB/Cassandra
+### Databases
+
+- Postgres [PROGRESS]
+- DragonflyDB
+- ScyllaDB
 - MongoDB
 - Neo4J
+- Ceph
+
+### Data pipeline tech
+
+- Airflow
+- Spark
+- Flink
+- Iceberg
+
+## Notes
+
+- Some oracle notes exist on the `oracle-sql` branch but have since been removed on `master`
 
 ---
