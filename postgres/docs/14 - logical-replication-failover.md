@@ -224,7 +224,20 @@
 - Details about these conflicts can be found in the subscriber logs
 - More info at https://www.postgresql.org/docs/18/logical-replication-conflicts.html
 
-- Try introducing and resolving one missing and one manual conflict [TODO]
+- Try introducing and resolving one missing and one manual conflict
+  - Try an `update_origin_differs` in two ways: [DONE]
+    - update a record such that id (primary key) is same but the name is different
+    - update a record such that id (primary key) and name is same
+    - verify in both cases update is just applied
+  - Try an `insert_exists` in two ways: [DONE]
+    - input a record where the id (primary key) is same but the name is different
+    - input a record where the id (primary key) and name is same
+    - check in which case we have to resolve it manually and how
+      - in both cases, the `logical replication apply worker` just exits and logical replication stops (verified from logs)
+      - for resolving the conflict, we delete the entry that we manually inserted on subscriber
+      - the moment we do, it automatically brings the subscriber back up to date with publisher by starting the logical replication again
+    - We also tried `delete_missing` by manually deleting on subscriber and then deleting same record on publisher [DONE]
+      - nothing happens to subscriber and logical replication is still active
 
 ### Restrictions
 

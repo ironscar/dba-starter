@@ -30,7 +30,7 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - JIT [DONE]
 13. High availability, replication & failover [NOW]
     - https://www.postgresql.org/docs/16/high-availability.html [DONE]
-    - https://www.postgresql.org/docs/16/logical-replication.html [NOW]
+    - https://www.postgresql.org/docs/16/logical-replication.html [DONE]
     - https://pgdash.io/blog/horizontally-scaling-postgresql.html
 14. Sharding & HA Cluster deployments
     - Pgbouncer: https://www.pgbouncer.org/ (for connection pooling)

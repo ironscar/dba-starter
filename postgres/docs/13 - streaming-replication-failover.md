@@ -323,7 +323,7 @@
   - pgdb2 = `192.168.196.3` (cascade_standby from pgdb3)
   - pgdb3 = `192.168.196.4` (standby1 from pgdb4)
   - pgdb4 = `192.168.196.2` (primary)
-- Now we'll simulate failover of primary and promote stanby1, then attempt to restart old-primary with pg_rewind [TRY-AGAIN]
+- Now we'll simulate failover of primary and promote stanby1, then attempt to restart old-primary with pg_rewind
   - First set `wal_log_hints=on` on all containers
     - we either need `checksums` or `wal_log_hints` for pg_rewind to work
     - `checksums` offer more data integrity guarantees and has to be set at initialization

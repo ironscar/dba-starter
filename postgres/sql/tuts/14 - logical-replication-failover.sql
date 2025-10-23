@@ -113,6 +113,31 @@ select* from logrec.row_filter_trial;
 -- conflict stats per subscription
 select* from pg_stat_subscription_stats;
 
+-- select data
+select* from logrec.tlr1;
+select* from logrec.tlr2;
+
+-- update on subscriber for update_origin_differs
+update logrec.tlr1 set name = 'LogRec-1 1' where id = 1;
+
+-- update on publisher
+update logrec.tlr1 set name = 'LogRec-1 2' where id = 1;
+
+-- insert on subscriber for insert_exists
+insert into logrec.tlr2 values (3, 'RecLog-3');
+
+-- insert on publisher
+insert into logrec.tlr2 values (5, 'RecLog-5');
+
+-- resolve data conflict by deleting problematic entry
+delete from logrec.tlr2 where id = 3;
+
+-- delete on subscriber for delete_missing
+delete from logrec.tlr2 where id = 5;
+
+-- delete on publisher
+delete from logrec.tlr2 where id = 5;
+
 -------------------------------------------------------------------
 
 -- cleanup
