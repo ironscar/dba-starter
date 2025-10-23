@@ -1,8 +1,10 @@
 # Data Engineering and Administration Starter
 
-A learning project for data engineering and administration of various types of SQL and NoSQL DBs
+A learning project for data engineering and administration of various types of SQL and NoSQL DBs, object stores and big data
 
 ## Todos
+
+Refer to https://roadmap.sh/r/cloud-development-roadmap for overall plan
 
 ### Databases
 
@@ -13,7 +15,7 @@ A learning project for data engineering and administration of various types of S
 - Neo4J
 - Ceph
 
-### Data pipeline tech
+### Data engineering
 
 - Airflow
 - Spark
