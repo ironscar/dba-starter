@@ -22,6 +22,6 @@ A learning project for data engineering and administration of various types of S
 
 ## Notes
 
-- Some oracle notes exist on the `oracle-sql` branch but have since been removed on `master`
+- Oracle SQL notes only exist on this branch but its not kept up to date for postgres
 
 ---
