@@ -32,22 +32,22 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - https://www.postgresql.org/docs/16/high-availability.html [DONE]
     - https://www.postgresql.org/docs/16/logical-replication.html [DONE]
 14. Sharding & HA Cluster deployments [NOW]
-    - Pgbouncer: https://www.pgbouncer.org/ (for connection pooling)
-    - HAProxy: https://www.haproxy.org/ (for load balancing)
-    - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
     - Citus: https://www.citusdata.com/ (for sharding)
+    - Pgbouncer: https://www.pgbouncer.org/ (for connection pooling)
+    - HAProxy (for load balancing)
+    - Patroni: https://patroni.readthedocs.io/en/latest/ (for auto-failover)
+    - PgPool: https://hub.docker.com/r/bitnami/pgpool (for HA, connection pooling etc all in one)
     - YugabyteDB: https://www.yugabyte.com/yugabytedb/
     - Distributed Multi-master HA and failover: (https://www.yugabyte.com/postgresql/distributed-postgresql/)
-15. App integrations
-    - With sharding and HA setup with failover
-      - https://aws.amazon.com/blogs/database/a-single-pgpool-endpoint-for-reads-and-writes-with-amazon-aurora-postgresql/
-      - https://hub.docker.com/r/bitnami/pgpool
+    - Integrate app to work with single read/write endpoint
+15. Additional App integrations
     - For query hints (https://www.enterprisedb.com/docs/epas/latest/application_programming/optimizing_code/05_optimizer_hints/)
     - For procs/functions
     - Using JSONB and semi-structured data
     - Using complex datatypes in columns
     - Using GIN and GIST index on those complex columns
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
+      - If Kafka needed, then pick up after Event-driven architectures
 16. Upgrade to new DB versions
     - https://www.postgresql.org/docs/current/pgupgrade.html
     - https://www.postgresql.org/docs/18/logical-replication-upgrade.html
