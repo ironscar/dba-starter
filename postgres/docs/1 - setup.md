@@ -152,6 +152,7 @@ docker run -d \
 - `docker run -d -p 5432:5432 --name pgdb1 --network demo-net -e POSTGRES_PASSWORD=postgrespass --mount source=pgdata1,target=/var/lib/postgresql postgres:18.0-alpine3.22`
   - if mount is specified on another path, it creates another volume on this path by default
   - actual datadir is `/var/lib/postgresql/18/docker/`
+  - on host , we can find it by `wsl -d docker-desktop` and then `cd /tmp/docker-desktop-root/run/desktop/mnt/docker-desktop-disk/data/docker/volumes`
 - Alpine also doesn't have vim installed so for editing files
   - we first use `grep <pattern> <filename>` to find what exactly needs to be changed
   - then `sed -i 's/<text to be replaced>/<new text>/g' <filename>` to change it
