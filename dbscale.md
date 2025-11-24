@@ -132,6 +132,27 @@ This markdown contains the notes from the book of the same name
   - the storage to memory ratio becomes important again as it also determines the cache utilization
   - another raio is memory per core as some databases have shards per core architectures with specific memory allocated per core
   - not enough RAM can cause unpredictable issues, even crashes
-- Network [CONTINUE]
+- Network
+  - Network is important because cluster members have a lot of ongoing communication with respect to liveliness, replication etc
+    - a low throughput workload will require less bandwidth than a high throughtput workload so scale network accordingly
+    - for example, ScyllaDB recommends a minimum network bandwidth of 10 Gbps
+    - application talking to the DB should be considered to keep within this network instead of an external one with lower bandwidth connection to the DB
+  - OSs often halt all available CPU to respond to network traffic, which may affect DB performance
+    - we can use CPU pinning to only allow specific CPUs to get interrupted instead of all
+- Containerizing databases often have a performance impact due to not being able to use performance optimizations built for VM or bare-metal
+  - best results with containerizing are when
+    - resources are statically partitioned and CPU pinning / interrupt isolation can work
+    - containers have direct access to database's underlying storage
+    - using OS netweok to avoid the performance penalty of virtualized network
+    - containers aren't fighting for resources with other containers
+  - Kubernetes adds yet another virtualization layer thus allowing more penalties
+    - dedicated independent nodes for databases
+    - enable `hostNetworking` with required kernel parameters as recommended by vendor
+    - ensure database pods have a Guaranteed QoS class to avoid other pods taking resources
+    - use a K8s operator for the database wherever possible to manage lifecycle
 
 ---
+
+## Chapter 8 
+
+- [CONTINUE-HERE]
