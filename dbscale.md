@@ -155,4 +155,37 @@ This markdown contains the notes from the book of the same name
 
 ## Chapter 8 
 
-- [CONTINUE-HERE]
+- This chapter discusses about deployment topologies
+- Replication strategies talk about ways to replicate changes to other replicas in a cluster
+  - having more replicas slow down writes but it can accelerate reads while maintaining availability
+  - most systems use a replication factor (RF) of 3 where a quorum of replicas is achieved even if one replica goes down
+  - replicas can be maintained in multiple availability zones in multiple regions for disaster recovery
+  - replication latency across availability zones are lesser compared to across regions
+  - more replicas implies more systems to maintain which has corresponding cost considerations
+  - compare costs based on the fact that is the network and maintenance cost less than the cost of single point of failure
+  - if all replicas are in a single data center, ideally each should be in a different rack so that one rack going down doesn't affect the other replicas
+  - placing replicas closer to consumers that use them reduces latency, but consumers must know which is their local replica to connect to
+  - usually its better to restrict consistency to within a single data center so as to avoid latencies of reaching out to multiple regions
+  - consumers must be able to handle failovers to another region's replica and switch back when the local replica has recovered
+- Vertical vs Horizontal scaling
+  - topologies would invariably include how many nodes and how powerful is each node
+  - it is usually recommended to take the most vertically scaled machine that the DB can make 100% use of and only horizontally scale for the minimum availability requirements with small clusters
+  - scaling too much horizontally can often result in bandwidth contention, operational complexity and more machine failures
+- Workload isolation
+  - there is often usecase to run multiple different kinds of workloads against the same data
+  - running all workloads on the same cluster reduces cost but also causes resource contention
+  - we can avoid resource contention by physical isolation, logical isolation or scheduled isolation
+    - physical isolation is where two workloads are run on similar but distinct nodes
+    - logical isolation is where certain databases like ScyllaDB allow setting weights to workloads based on which they can be prioritized during resource contention
+    - scheduled isolation is where certain workloads can be run during specific times so as to reduce contention based on behaviour
+  - workloads can be split based on their latency requirements
+    - all workloads with low latencies can be kept in independent clusters to eliminate contention concerns
+    - other workloads can be in shared clusters where contention is not a concern due to non-stringent latency requirements
+- Abstractions
+  - abstraction here refers to having a database-agnostic interface layer on top of the actual database but there are the following caveats
+    - it helps with database portability without changing business logic but there needs to exist adapter logic for target database kept consistent with each upgrade
+    - developers can develop without worrying about the specificities of a particular database but also lose out on using specific benefits of the database
+- Load Balancing
+  - [CONTINUE-HERE]
+
+---
