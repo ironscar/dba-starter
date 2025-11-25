@@ -4,6 +4,9 @@
 
 - use `CREATE TABLE` command to do this
 - we can set the type to `serial` to auto-generate ids
+  - this internally creates a sequence and sets the column to non-null
+  - sequence is automatically dropped if column is dropped
+  - we should always skip this from insert otherwise it can cause conflicts with the sequence
 - we can delete tables using `drop table {tableName}`
 - we can also create a table from another table as `create table tb as table tb2`
   - this effectively copies the structure & all data
@@ -37,6 +40,7 @@
 
 - Regular SQL queries work with the usual syntax except for the non-existence of `dual`
   - in this case we just skip the `from dual` part and it works as expected
+- When using `ORDER BY`, we can specify if `NULLS FIRST` (default for DESC) or `NULLS LAST` (default for ASC)
 - `WITH RECURSIVE` is a new thing which allows recursive queries like finding hierarchies
   - type casting can be done as `column::text` to cast it to type `text`
   - the order of operations in `WITH RECURSIVE` is as follows

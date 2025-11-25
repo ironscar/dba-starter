@@ -47,13 +47,25 @@ So we will go ahead with YugabyteDB for following reasons:
 - A `Yugabyte universe` is the highest logical grouping of a distributed database comprising of one or more clusters and their nodes
   - cluster includes a primary cluster for read/write and optional replica clusters
 
-### SQL Features on Yugabyte
+---
+
+## SQL Features on Yugabyte
 
 - Yugabyte YSQL reuses PostgreSQL query layer and supports most PostgreSQL features
 - To run commands, we need to load up `YSQLSH` on the container and we can do this by `docker exec` into container and then running `ysqlsh -h ygbt1 -p 5433`
   - the `-h` is essentially the `$(hostname)` env variable
+- SQL features not currently supported as of 25th Nov 2025 are discussed in https://docs.yugabyte.com/stable/api/ysql/sql-feature-support/#data-types some of which are:
+  - altering `indexes` or `primary keys` is not supported
+  - removing or altering `user-defined schemas` is not supported
+  - `deferrable` and `exclusion constraints` are not supported
+    - though deferrable initially deferred seems to be supported as per https://docs.yugabyte.com/stable/explore/ysql-language-features/data-manipulation/#deferring-constraints
+  - `deferrable triggers` are not supported
+  - `GIST` and `BRIN` indexes are not supported
+  - `MERGE INTO` statement is not supported
+    - instead it supports a `INSERT ON CONFLICT UPDATE` statement
+    - example in associated SQL file where conflict on `id` column is used to update existing record using the `EXCLUDED` keyword
 
-#### Create databases and tables
+### Create databases and tables
 
 - To create a database, we use `create database mydb1;`
   - `\c mydb1`: logs in to the database `mydb1` as user `yugabyte`
@@ -69,17 +81,19 @@ So we will go ahead with YugabyteDB for following reasons:
     - hostname = localhost, port = 5435, db = mydb1, user = yugabyte, no password yet
   - then we can see it has the db and the table we created and running a select query returns results we inserted from terminal
 
-#### Users basics
+### Users basics
 
 - YugabyteDB has a recommended superuser called `yugabyte` but for now this has now password
 - We can use commands as per `7 - admin-roles` for creating users and managing privileges
 
-#### Persistence
+### Persistence
 
 - Let us try persistence now after removing old container and pruning extra volumes created other than the one we mounted
   - thankfully pruning doesn't remove the mounted volume, only the extra ones created by the last container
   - it created two new volumes but does indeed have the data we created previously
 
-#### Data types
+### Indexes
 
-Continue from https://docs.yugabyte.com/stable/explore/ysql-language-features/data-types/
+Continue from https://docs.yugabyte.com/stable/explore/ysql-language-features/indexes-constraints/
+
+---

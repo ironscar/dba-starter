@@ -44,10 +44,10 @@ For our cloud native learnings, we will do stuff on PostgresSQL
     - For query hints (https://www.enterprisedb.com/docs/epas/latest/application_programming/optimizing_code/05_optimizer_hints/)
     - For procs/functions
     - Using JSONB and semi-structured data
-    - Using complex datatypes in columns
+    - Using complex datatypes in columns like arrays and structs (https://docs.yugabyte.com/stable/explore/ysql-language-features/data-types/)
     - Using GIN and GIST index on those complex columns
     - Use Debezium to use CDC from DB (https://debezium.io/releases/ and https://debezium.io/)
-      - If Kafka needed, then pick up after Event-driven architectures
+      - If Kafka etc needed, then pick up after Event-driven architectures
 16. Upgrade to new DB versions
     - https://www.postgresql.org/docs/current/pgupgrade.html
     - https://www.postgresql.org/docs/18/logical-replication-upgrade.html
